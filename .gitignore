@@ -1,15 +1,6 @@
-# OS
-.DS_Store
-
-# Python
-__pycache__/
-*.pyc
-.venv/
-
-# Data files
-*.csv
-*.parquet
-*.xlsx
-
-# Node / frontend
-node_modules/
+dashboard/objects_old.ipynb
+dashboard/repetitive_task_detector.py
+dashboard/repetitive_task_explorer.jsx
+dashboard/USAGE_GUIDE.md
+dashboard/data/
+dashboard/data-exploration/
