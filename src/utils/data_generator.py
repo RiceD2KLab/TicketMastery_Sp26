@@ -1,30 +1,6 @@
 import pandas as pd
 import numpy as np
 
-"""
-DOCSTRING
-"""
-def df_convert_to_datetimes(df_tickets_assets):
-    # List of date columns to convert and format
-    date_columns = [
-        'BASELINE_START_LTZ', 'BASELINE_END_LTZ', 'ASSIGNED_DATE_LTZ',
-        'PLANNED_START_LTZ', 'PLANNED_END_LTZ', 'PLANNED_FOLLOW_UP_DATE_LTZ',
-        'ACTUAL_START_LTZ', 'ACTUAL_END_LTZ', 'CREATE_DATE_LTZ'
-    ]
-
-    # Convert and format date columns
-    for col in date_columns:
-        # Ensure column is first converted to datetime
-        df_tickets_assets[col] = pd.to_datetime(df_tickets_assets[col], errors='coerce')
-        # Format datetime objects to the right string format
-        df_tickets_assets[col] = df_tickets_assets[col].dt.strftime('%Y-%m-%d %H:%M:%S.%f').replace({np.nan: ''})
-
-    # Convert WORK_TASK_ID to integer type before saving
-    # df_tickets_assets['WORK_TASK_ID'] = df_tickets_assets['WORK_TASK_ID'].astype(int)
-    bad_values = df_tickets_assets[pd.to_numeric(df_tickets_assets['WORK_TASK_ID'], errors='coerce').isna()]['WORK_TASK_ID'].unique()
-    print(bad_values)
-    # df_tickets_assets['WORK_TASK_ID'] = df_tickets_assets['WORK_TASK_ID'].astype('Int64')
-
 
 """
 DOCSTRING
