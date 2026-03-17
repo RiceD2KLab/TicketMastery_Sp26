@@ -1,5 +1,0 @@
-data/*
-!data/.gitkeep
-notebooks/objects_old.ipynb
-*.csv
-todo.txt
