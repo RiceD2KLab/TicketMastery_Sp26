@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <title>pydeck</title>
+        <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.13.0/mapbox-gl.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+    <script src='https://cdn.jsdelivr.net/npm/@deck.gl/jupyter-widget@~9.0.*/dist/index.js'></script>
+    <style>
+    body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#deck-container {
+  width: 100vw;
+  height: 100vh;
+}
+
+#deck-container canvas {
+  z-index: 1;
+  background: none;
+}
+    </style>
+  </head>
+  <body>
+    <div id="deck-container">
+    </div>
+  </body>
+  <script>
+    const container = document.getElementById('deck-container');
+    const jsonInput = {
+  "initialViewState": {
+    "latitude": 29.717154,
+    "longitude": -95.404182,
+    "maxZoom": 20,
+    "minZoom": 15,
+    "pitch": 45,
+    "zoom": 15.5
+  },
+  "layers": [
+    {
+      "@@type": "ColumnLayer",
+      "data": [
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 258,
+          "FEP_BUILDING_CLASS": "Administrative",
+          "FEP_BUILDING_DESC": "Primary Data Center",
+          "FEP_BUILDING_X_COORDINATE": 29.658172,
+          "FEP_BUILDING_Y_COORDINATE": -95.443261
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 786,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Library Service Center",
+          "FEP_BUILDING_X_COORDINATE": 29.656995,
+          "FEP_BUILDING_Y_COORDINATE": -95.443232
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 16,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "IBC Building - 5615 Kirby Drive",
+          "FEP_BUILDING_X_COORDINATE": 29.72201,
+          "FEP_BUILDING_Y_COORDINATE": -95.418053
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 786,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Rice Village Apartments",
+          "FEP_BUILDING_X_COORDINATE": 29.714418,
+          "FEP_BUILDING_Y_COORDINATE": -95.415897
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 344,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Rice Childrens Campus",
+          "FEP_BUILDING_X_COORDINATE": 29.71648,
+          "FEP_BUILDING_Y_COORDINATE": -95.414378
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1623,
+          "FEP_BUILDING_CLASS": "Athletic",
+          "FEP_BUILDING_DESC": "Brian Patterson Sports Performance Center",
+          "FEP_BUILDING_X_COORDINATE": 29.717266,
+          "FEP_BUILDING_Y_COORDINATE": -95.409333
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 4385,
+          "FEP_BUILDING_CLASS": "Athletic",
+          "FEP_BUILDING_DESC": "Rice Stadium",
+          "FEP_BUILDING_X_COORDINATE": 29.716037,
+          "FEP_BUILDING_Y_COORDINATE": -95.409307
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 567,
+          "FEP_BUILDING_CLASS": "Athletic",
+          "FEP_BUILDING_DESC": "George R. Brown Tennis Center",
+          "FEP_BUILDING_X_COORDINATE": 29.7179,
+          "FEP_BUILDING_Y_COORDINATE": -95.40831
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2087,
+          "FEP_BUILDING_CLASS": "Administrative",
+          "FEP_BUILDING_DESC": "Police Department Building",
+          "FEP_BUILDING_X_COORDINATE": 29.713823,
+          "FEP_BUILDING_Y_COORDINATE": -95.407016
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2260,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Anderson-Clarke Center",
+          "FEP_BUILDING_X_COORDINATE": 29.714392,
+          "FEP_BUILDING_Y_COORDINATE": -95.406802
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2445,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Moody Center for The Arts",
+          "FEP_BUILDING_X_COORDINATE": 29.714049,
+          "FEP_BUILDING_Y_COORDINATE": -95.405531
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 3782,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Alice Pratt Brown Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.716212,
+          "FEP_BUILDING_Y_COORDINATE": -95.404981
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 1930,
+          "FEP_BUILDING_CLASS": "Athletic",
+          "FEP_BUILDING_DESC": "Reckling Park at Cameron Field",
+          "FEP_BUILDING_X_COORDINATE": 29.714004,
+          "FEP_BUILDING_Y_COORDINATE": -95.404274
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 10553,
+          "FEP_BUILDING_CLASS": "Athletic",
+          "FEP_BUILDING_DESC": "Tudor Fieldhouse and Youngkin Center",
+          "FEP_BUILDING_X_COORDINATE": 29.71497,
+          "FEP_BUILDING_Y_COORDINATE": -95.403768
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 3942,
+          "FEP_BUILDING_CLASS": "Student Life",
+          "FEP_BUILDING_DESC": "Barbara and David Gibbs Recreation and Wellness Center",
+          "FEP_BUILDING_X_COORDINATE": 29.718195,
+          "FEP_BUILDING_Y_COORDINATE": -95.403744
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 4834,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Janice and Robert McNair Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.7174,
+          "FEP_BUILDING_Y_COORDINATE": -95.403496
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 6104,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "Dell Butcher Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.719462,
+          "FEP_BUILDING_Y_COORDINATE": -95.403153
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 274,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "Greenhouse",
+          "FEP_BUILDING_X_COORDINATE": 29.718803,
+          "FEP_BUILDING_Y_COORDINATE": -95.40292
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2913,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "James A. Baker III Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.716601,
+          "FEP_BUILDING_Y_COORDINATE": -95.402648
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 4128,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "Space Science and Technology",
+          "FEP_BUILDING_X_COORDINATE": 29.719842,
+          "FEP_BUILDING_Y_COORDINATE": -95.402629
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 3976,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "Keith-Wiess Geological Laboratories",
+          "FEP_BUILDING_X_COORDINATE": 29.71932,
+          "FEP_BUILDING_Y_COORDINATE": -95.402431
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 5143,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "M.D. Anderson Biological Laboratories",
+          "FEP_BUILDING_X_COORDINATE": 29.718713,
+          "FEP_BUILDING_Y_COORDINATE": -95.402405
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 9805,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "Bioscience Research Collaborative",
+          "FEP_BUILDING_X_COORDINATE": 29.711066,
+          "FEP_BUILDING_Y_COORDINATE": -95.402064
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 4364,
+          "FEP_BUILDING_CLASS": "Student Life",
+          "FEP_BUILDING_DESC": "Rice Memorial Center - Ley Student Center",
+          "FEP_BUILDING_X_COORDINATE": 29.71796,
+          "FEP_BUILDING_Y_COORDINATE": -95.401966
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 970,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Hamman Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.720138,
+          "FEP_BUILDING_Y_COORDINATE": -95.401814
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 444,
+          "FEP_BUILDING_CLASS": "Athletic",
+          "FEP_BUILDING_DESC": "Ley Track and Holloway Field",
+          "FEP_BUILDING_X_COORDINATE": 29.713244,
+          "FEP_BUILDING_Y_COORDINATE": -95.401697
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 5280,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "Brockman Hall for Physics",
+          "FEP_BUILDING_X_COORDINATE": 29.719734,
+          "FEP_BUILDING_Y_COORDINATE": -95.401649
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 7350,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "George R. Brown Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.719205,
+          "FEP_BUILDING_Y_COORDINATE": -95.40133
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 1646,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Oshman Engineering Design Kitchen",
+          "FEP_BUILDING_X_COORDINATE": 29.721124,
+          "FEP_BUILDING_Y_COORDINATE": -95.40129
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1216,
+          "FEP_BUILDING_CLASS": "Administrative",
+          "FEP_BUILDING_DESC": "Mudd Computer Science Building",
+          "FEP_BUILDING_X_COORDINATE": 29.720454,
+          "FEP_BUILDING_Y_COORDINATE": -95.401119
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2279,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Robert R. Herring Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.71703,
+          "FEP_BUILDING_Y_COORDINATE": -95.401093
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2067,
+          "FEP_BUILDING_CLASS": "Student Life",
+          "FEP_BUILDING_DESC": "South Kitchen Servery",
+          "FEP_BUILDING_X_COORDINATE": 29.71546,
+          "FEP_BUILDING_Y_COORDINATE": -95.401058
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2807,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Herman Brown Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.719927,
+          "FEP_BUILDING_Y_COORDINATE": -95.400857
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1276,
+          "FEP_BUILDING_CLASS": "Student Life",
+          "FEP_BUILDING_DESC": "Raymond and Susan Brochstein Pavilion",
+          "FEP_BUILDING_X_COORDINATE": 29.717837,
+          "FEP_BUILDING_Y_COORDINATE": -95.400821
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1644,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Wiess College",
+          "FEP_BUILDING_X_COORDINATE": 29.714952,
+          "FEP_BUILDING_Y_COORDINATE": -95.400704
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2176,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Hanszen College",
+          "FEP_BUILDING_X_COORDINATE": 29.715584,
+          "FEP_BUILDING_Y_COORDINATE": -95.400691
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2042,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "Ryon Engineering Laboratory",
+          "FEP_BUILDING_X_COORDINATE": 29.720672,
+          "FEP_BUILDING_Y_COORDINATE": -95.400626
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 565,
+          "FEP_BUILDING_CLASS": "Student Life",
+          "FEP_BUILDING_DESC": "Multicultural Center",
+          "FEP_BUILDING_X_COORDINATE": 29.71676,
+          "FEP_BUILDING_Y_COORDINATE": -95.400421
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2401,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "Mechanical Engineering",
+          "FEP_BUILDING_X_COORDINATE": 29.720155,
+          "FEP_BUILDING_Y_COORDINATE": -95.400327
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 4198,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Central Plant",
+          "FEP_BUILDING_X_COORDINATE": 29.720972,
+          "FEP_BUILDING_Y_COORDINATE": -95.400147
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 6589,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Fondren Library",
+          "FEP_BUILDING_X_COORDINATE": 29.718137,
+          "FEP_BUILDING_Y_COORDINATE": -95.400128
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 6119,
+          "FEP_BUILDING_CLASS": "Sci. Research",
+          "FEP_BUILDING_DESC": "Keck Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.719614,
+          "FEP_BUILDING_Y_COORDINATE": -95.400114
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1286,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Mary Gibbs Jones College - South",
+          "FEP_BUILDING_X_COORDINATE": 29.720773,
+          "FEP_BUILDING_Y_COORDINATE": -95.399959
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 1738,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Robert and Katherine Maxfield Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.720773,
+          "FEP_BUILDING_Y_COORDINATE": -95.399959
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 267,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Wilson House (Wiess College Magisters House)",
+          "FEP_BUILDING_X_COORDINATE": 29.714727,
+          "FEP_BUILDING_Y_COORDINATE": -95.399837
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 230,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Baker College Magisters House",
+          "FEP_BUILDING_X_COORDINATE": 29.716993,
+          "FEP_BUILDING_Y_COORDINATE": -95.399835
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2990,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "South Plant",
+          "FEP_BUILDING_X_COORDINATE": 29.714162,
+          "FEP_BUILDING_Y_COORDINATE": -95.399755
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2452,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "M.D. Anderson Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.7189,
+          "FEP_BUILDING_Y_COORDINATE": -95.399716
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 200,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Will Rice College Magisters House",
+          "FEP_BUILDING_X_COORDINATE": 29.716804,
+          "FEP_BUILDING_Y_COORDINATE": -95.399699
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 328,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Housing and Dining Offices",
+          "FEP_BUILDING_X_COORDINATE": 29.715235,
+          "FEP_BUILDING_Y_COORDINATE": -95.399674
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2140,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Humanities Building",
+          "FEP_BUILDING_X_COORDINATE": 29.717614,
+          "FEP_BUILDING_Y_COORDINATE": -95.399624
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1166,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Cooling Tower",
+          "FEP_BUILDING_X_COORDINATE": 29.721612,
+          "FEP_BUILDING_Y_COORDINATE": -95.399615
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 8369,
+          "FEP_BUILDING_CLASS": "Administrative",
+          "FEP_BUILDING_DESC": "Facilities Engineering and Planning",
+          "FEP_BUILDING_X_COORDINATE": 29.721842,
+          "FEP_BUILDING_Y_COORDINATE": -95.399597
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 3022,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Baker College",
+          "FEP_BUILDING_X_COORDINATE": 29.717102,
+          "FEP_BUILDING_Y_COORDINATE": -95.399303
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 6184,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Anne and Charles Duncan Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.720822,
+          "FEP_BUILDING_Y_COORDINATE": -95.399242
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1595,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Rayzor Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.718016,
+          "FEP_BUILDING_Y_COORDINATE": -95.399064
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 270,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Duncan College Magisters House",
+          "FEP_BUILDING_X_COORDINATE": 29.721317,
+          "FEP_BUILDING_Y_COORDINATE": -95.398749
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2111,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Will Rice College",
+          "FEP_BUILDING_X_COORDINATE": 29.716386,
+          "FEP_BUILDING_Y_COORDINATE": -95.398698
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2293,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Herzstein Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.719356,
+          "FEP_BUILDING_Y_COORDINATE": -95.398495
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2632,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Duncan College",
+          "FEP_BUILDING_X_COORDINATE": 29.721859,
+          "FEP_BUILDING_Y_COORDINATE": -95.398494
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 954,
+          "FEP_BUILDING_CLASS": "Student Life",
+          "FEP_BUILDING_DESC": "Abe and Annie Seibel Servery",
+          "FEP_BUILDING_X_COORDINATE": 29.71597,
+          "FEP_BUILDING_Y_COORDINATE": -95.398403
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 247,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "McMurtry College Magisters House",
+          "FEP_BUILDING_X_COORDINATE": 29.720773,
+          "FEP_BUILDING_Y_COORDINATE": -95.398401
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 1726,
+          "FEP_BUILDING_CLASS": "Student Life",
+          "FEP_BUILDING_DESC": "West Kitchen Servery",
+          "FEP_BUILDING_X_COORDINATE": 29.721104,
+          "FEP_BUILDING_Y_COORDINATE": -95.398376
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 782,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Rice Graduate Apartments",
+          "FEP_BUILDING_X_COORDINATE": 29.725247,
+          "FEP_BUILDING_Y_COORDINATE": -95.398299
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 209,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Martel College Magisters House",
+          "FEP_BUILDING_X_COORDINATE": 29.722426,
+          "FEP_BUILDING_Y_COORDINATE": -95.398223
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2776,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Old Edgar Odell Lovett College",
+          "FEP_BUILDING_X_COORDINATE": 29.716399,
+          "FEP_BUILDING_Y_COORDINATE": -95.397998
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 4450,
+          "FEP_BUILDING_CLASS": "Academic",
+          "FEP_BUILDING_DESC": "Sewall Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.718338,
+          "FEP_BUILDING_Y_COORDINATE": -95.397972
+        },
+        {
+          "COLOR": [
+            255,
+            0,
+            0
+          ],
+          "COUNT": 4307,
+          "FEP_BUILDING_CLASS": "Administrative",
+          "FEP_BUILDING_DESC": "Allen Business Center",
+          "FEP_BUILDING_X_COORDINATE": 29.717629,
+          "FEP_BUILDING_Y_COORDINATE": -95.397839
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2286,
+          "FEP_BUILDING_CLASS": "Administrative",
+          "FEP_BUILDING_DESC": "Lovett Hall",
+          "FEP_BUILDING_X_COORDINATE": 29.719021,
+          "FEP_BUILDING_Y_COORDINATE": -95.397824
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2611,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Burton and Deedee McMurtry College",
+          "FEP_BUILDING_X_COORDINATE": 29.720534,
+          "FEP_BUILDING_Y_COORDINATE": -95.39782
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 1901,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Martel College",
+          "FEP_BUILDING_X_COORDINATE": 29.722095,
+          "FEP_BUILDING_Y_COORDINATE": -95.397538
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 3466,
+          "FEP_BUILDING_CLASS": "Administrative",
+          "FEP_BUILDING_DESC": "Cambridge Office Building",
+          "FEP_BUILDING_X_COORDINATE": 29.71707,
+          "FEP_BUILDING_Y_COORDINATE": -95.39753
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 212,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Jones College Magisters House",
+          "FEP_BUILDING_X_COORDINATE": 29.721283,
+          "FEP_BUILDING_Y_COORDINATE": -95.397326
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1426,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Robert and Agnes Cohen House",
+          "FEP_BUILDING_X_COORDINATE": 29.717803,
+          "FEP_BUILDING_Y_COORDINATE": -95.397215
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 1650,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Mary Gibbs Jones College - North",
+          "FEP_BUILDING_X_COORDINATE": 29.72152,
+          "FEP_BUILDING_Y_COORDINATE": -95.396935
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 368,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Mary Gibbs Jones College - Commons",
+          "FEP_BUILDING_X_COORDINATE": 29.721535,
+          "FEP_BUILDING_Y_COORDINATE": -95.396808
+        },
+        {
+          "COLOR": [
+            255,
+            255,
+            0
+          ],
+          "COUNT": 2075,
+          "FEP_BUILDING_CLASS": "Student Life",
+          "FEP_BUILDING_DESC": "North Kitchen Servery",
+          "FEP_BUILDING_X_COORDINATE": 29.721839,
+          "FEP_BUILDING_Y_COORDINATE": -95.396625
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1552,
+          "FEP_BUILDING_CLASS": "Administrative",
+          "FEP_BUILDING_DESC": "Peter and Nancy Huff House",
+          "FEP_BUILDING_X_COORDINATE": 29.720548,
+          "FEP_BUILDING_Y_COORDINATE": -95.396279
+        },
+        {
+          "COLOR": [
+            0,
+            0,
+            255
+          ],
+          "COUNT": 258,
+          "FEP_BUILDING_CLASS": "Support",
+          "FEP_BUILDING_DESC": "Brown College Magisters House",
+          "FEP_BUILDING_X_COORDINATE": 29.721062,
+          "FEP_BUILDING_Y_COORDINATE": -95.396067
+        },
+        {
+          "COLOR": [
+            255,
+            127,
+            0
+          ],
+          "COUNT": 2905,
+          "FEP_BUILDING_CLASS": "Residence Hall",
+          "FEP_BUILDING_DESC": "Margarett Root Brown College",
+          "FEP_BUILDING_X_COORDINATE": 29.721445,
+          "FEP_BUILDING_Y_COORDINATE": -95.395929
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 698,
+          "FEP_BUILDING_CLASS": "Student Life",
+          "FEP_BUILDING_DESC": "Morton L. Rich Student Health Center",
+          "FEP_BUILDING_X_COORDINATE": 29.721004,
+          "FEP_BUILDING_Y_COORDINATE": -95.395526
+        },
+        {
+          "COLOR": [
+            0,
+            255,
+            0
+          ],
+          "COUNT": 1123,
+          "FEP_BUILDING_CLASS": "Administrative",
+          "FEP_BUILDING_DESC": "Wiess President's House",
+          "FEP_BUILDING_X_COORDINATE": 29.721393,
+          "FEP_BUILDING_Y_COORDINATE": -95.3939
+        }
+      ],
+      "diskResolution": 12,
+      "elevationScale": 0.025,
+      "extruded": true,
+      "getElevation": "@@=COUNT",
+      "getFillColor": "@@=COLOR",
+      "getPosition": "@@=[FEP_BUILDING_Y_COORDINATE, FEP_BUILDING_X_COORDINATE]",
+      "id": "5fb15fba-8143-4713-bd29-54ea7179b2bf",
+      "pickable": true,
+      "radius": 10
+    }
+  ],
+  "mapProvider": "carto",
+  "mapStyle": "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+  "views": [
+    {
+      "@@type": "MapView",
+      "controller": true
+    }
+  ]
+};
+    const tooltip = {'text': 'Building: {FEP_BUILDING_DESC}\n Type: {FEP_BUILDING_CLASS}\n Tickets: {COUNT} '};
+    const customLibraries = null;
+    const configuration = null;
+
+    const deckInstance = createDeck({
+                  container,
+      jsonInput,
+      tooltip,
+      customLibraries,
+      configuration
+    });
+
+  </script>
+</html>
