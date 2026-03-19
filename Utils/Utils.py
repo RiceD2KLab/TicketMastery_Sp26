@@ -1,4 +1,5 @@
 import pandas as pd
+from WordCloud import WordCloud
 
 def process_data(assets, tickets, spaces):
     df_assets = pd.read_csv(assets)
@@ -15,6 +16,11 @@ def process_data(assets, tickets, spaces):
           .set_index("BUILDING_DESC")["BUILDING_CLASS"]
     )
     merged_df["BUILDING_CLASS"] = merged_df["BUILDING"].map(buildingclass_map)
+
+    # Tokenizing Description for Word Cloud 
+    merged_df = merged_df.dropna(subset=['DESCRIPTION'])
+    merged_df['TOKENS'] = merged_df['DESCRIPTION'].apply(WordCloud.clean_and_tokenize)
+
 
     selected_columns = [
         'WORK_TASK_ID',
@@ -38,6 +44,7 @@ def process_data(assets, tickets, spaces):
         'ORGANIZATION_TYPE',
         'ACTUAL_START_LTZ',
         'ACTUAL_END_LTZ',
-        'RICE_ACTUAL_COST'
+        'RICE_ACTUAL_COST',
+        'TOKENS'
     ]
     return merged_df[selected_columns].copy()
