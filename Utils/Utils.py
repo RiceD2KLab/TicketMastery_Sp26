@@ -1,6 +1,18 @@
 import pandas as pd
 from WordCloud import WordCloud
 
+"""
+Load asset, ticket, and space CSV data and return a merged DataFrame with
+selected analysis fields and tokenized ticket descriptions.
+
+Args:
+    assets: Path to the assets CSV file.
+    tickets: Path to the tickets CSV file.
+    spaces: Path to the spaces CSV file.
+
+Returns:
+    pd.DataFrame: Merged and cleaned dataset with selected columns for analysis.
+"""
 def process_data(assets, tickets, spaces):
     df_assets = pd.read_csv(assets)
     df_tickets = pd.read_csv(tickets)

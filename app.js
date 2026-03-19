@@ -4,8 +4,6 @@ const state = {
   keyword: "",
   rawAssetsRows: [],
   rawSurveyRows: [],
-  apiWordRows: [],
-  apiTicketRows: [],
   panel4Rows: [],
 };
 
@@ -198,19 +196,6 @@ function normalizeRows(rawRows) {
       event_date: eventDate,
     };
   });
-}
-
-function normalizeWordCountRows(rows) {
-  const agg = new Map();
-
-  rows.forEach((r) => {
-    const w = r.WORD;
-    const c = Number(r.COUNT);
-    if (!w || !Number.isFinite(c)) return;
-    agg.set(w, (agg.get(w) || 0) + c);
-  });
-
-  return [...agg.entries()].map(([WORD, COUNT]) => ({ WORD, COUNT }));
 }
 
 function normalizeApiTicketRows(rows) {
@@ -502,10 +487,10 @@ function renderPanel4() {
   const summary = $("keywordSummary");
   const tbody = $("keywordTable");
   const cloud = $("wordCloud");
-
+  
   const sourceRows = state.panel4Rows.length ? state.panel4Rows : state.rows;
   const rows = key
-    ? sourceRows.filter((r) => (r.description || "").toLowerCase().includes(key))
+    ? sourceRows.filter((r) => cleanDescription(r.description).includes(key))
     : sourceRows;
 
   summary.textContent = key
@@ -522,7 +507,7 @@ function renderPanel4() {
   const tokens = rows
     .flatMap((r) => (r.description || "").toLowerCase().split(/[^a-z0-9]+/))
     .filter((w) => w && !stopWords.has(w) && w.length > 2);
-    
+
   const freq = new Map();
   tokens.forEach((w) => freq.set(w, (freq.get(w) || 0) + 1));
 
@@ -682,11 +667,11 @@ function setupEvents() {
       const groupValue = $("wcGroupValue").value.trim();
 
       if (!groupCol) {
-        summary.textContent = `Loaded ${state.panel4Rows.length} tickets and word cloud (overall).`;
+        summary.textContent = `Loaded ${state.panel4Rows.length} tickets and word cloud.`;
       } else if (groupValue) {
-        summary.textContent = `Loaded ${state.panel4Rows.length} tickets for ${groupCol} = "${groupValue}".`;
+        summary.textContent = `Loaded ${state.panel4Rows.length} tickets for ${groupCol} = ${groupValue}.`;
       } else {
-        summary.textContent = `Loaded ${state.panel4Rows.length} tickets for ${groupCol} (aggregated across all groups).`;
+        summary.textContent = `Loaded ${state.panel4Rows.length} tickets for ${groupCol}.`;
       }
     } catch (e) {
       console.error(e);
