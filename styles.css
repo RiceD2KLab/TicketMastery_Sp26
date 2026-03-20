@@ -235,6 +235,19 @@ select {
   overflow-x: auto;
 }
 
+.summary-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.switch-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 @keyframes rise {
   from {
     opacity: 0;

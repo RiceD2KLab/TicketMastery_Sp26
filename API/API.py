@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import tempfile
@@ -16,6 +16,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 """
 Process uploaded CSV files and return ticket rows for frontend word-cloud analysis.
@@ -52,19 +53,39 @@ async def generate_wordcloud(
         assets_path, tickets_path, space_path = tmp_paths[0], tmp_paths[1], tmp_paths[2]
 
         df = Utils.process_data(tickets_path, assets_path, space_path)
+
+        allowed_group_cols = {
+            "SERVICE_CLASS",
+            "REQUEST_CLASS",
+            "RESPONSIBLE_ORGANIZATION_NAME",
+        }
         selected_values = parse_group_values(group_values)
         ticket_df = df.copy()
-        if group_col != None and group_values != None:
-            ticket_df = ticket_df[ticket_df[group_col].isin(selected_values)]
+
+        if group_col:
+            if group_col not in allowed_group_cols:
+                raise HTTPException(status_code=400, detail="Invalid group_col")
+
+            if group_col not in ticket_df.columns:
+                raise HTTPException(status_code=400, detail=f"{group_col} not found in data")
+
+            if selected_values:
+                ticket_df = ticket_df[ticket_df[group_col].isin(selected_values)]
+
+            ticket_df["GROUP_VALUE"] = ticket_df[group_col].fillna("")
+        else:
+            ticket_df["GROUP_VALUE"] = ""
         
         ticket_df = (
-            ticket_df[["WORK_TASK_ID", "BUILDING", "DESCRIPTION"]]
+            ticket_df[["WORK_TASK_ID", "BUILDING", "DESCRIPTION", "GROUP_VALUE"]]
             .fillna("")
             .replace({float("inf"): "", float("-inf"): ""})
         )
 
-        # Return records for JS to consume
-        return {"ticket_rows":ticket_df[["WORK_TASK_ID", "BUILDING", "DESCRIPTION"]].to_dict(orient="records")}
+        return {
+            "ticket_rows": ticket_df.to_dict(orient="records"),
+            "group_col": group_col or ""
+        }
 
     finally:
         for p in tmp_paths:

@@ -5,6 +5,7 @@ const state = {
   rawAssetsRows: [],
   rawSurveyRows: [],
   panel4Rows: [],
+  wordCloudIntersection: false,
 };
 
 const stopWords = new Set([
@@ -175,6 +176,68 @@ function cleanDescription(text) {
     .join(" ");
 }
 
+function parseGroupValuesInput(text) {
+  return (text || "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+function tokenizeDescription(text) {
+  return (text || "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w && w.length > 2 && !stopWords.has(w));
+}
+
+function buildUnionFreq(rows) {
+  const freq = new Map();
+
+  rows.forEach((r) => {
+    tokenizeDescription(r.description).forEach((w) => {
+      freq.set(w, (freq.get(w) || 0) + 1);
+    });
+  });
+
+  return freq;
+}
+
+function buildIntersectionFreq(rows, selectedValues) {
+  const normalizedSelected = selectedValues.map((v) => v.trim().toLowerCase());
+  const byGroupFreq = new Map();
+
+  rows.forEach((r) => {
+    const groupValue = (r.group_value || "").trim().toLowerCase();
+    if (!normalizedSelected.includes(groupValue)) return;
+
+    if (!byGroupFreq.has(groupValue)) {
+      byGroupFreq.set(groupValue, new Map());
+    }
+
+    const freq = byGroupFreq.get(groupValue);
+    tokenizeDescription(r.description).forEach((w) => {
+      freq.set(w, (freq.get(w) || 0) + 1);
+    });
+  });
+
+  if (byGroupFreq.size < 2) {
+    return buildUnionFreq(rows);
+  }
+
+  const groupMaps = [...byGroupFreq.values()];
+  const sharedWords = [...groupMaps[0].keys()].filter((word) =>
+    groupMaps.every((m) => m.has(word))
+  );
+
+  const intersectionFreq = new Map();
+  sharedWords.forEach((word) => {
+    const total = groupMaps.reduce((sum, m) => sum + (m.get(word) || 0), 0);
+    intersectionFreq.set(word, total);
+  });
+
+  return intersectionFreq;
+}
+
 function normalizeRows(rawRows) {
   return rawRows.map((r) => {
     const dateSource = r.baseline_start_ltz || r.create_date_ltz || r.created_at;
@@ -203,6 +266,7 @@ function normalizeApiTicketRows(rows) {
     ticket_id: r.WORK_TASK_ID || "",
     building: r.BUILDING || "Unknown",
     description: r.DESCRIPTION || "",
+    group_value: r.GROUP_VALUE || "",
   }));
 }
 
@@ -487,11 +551,17 @@ function renderPanel4() {
   const summary = $("keywordSummary");
   const tbody = $("keywordTable");
   const cloud = $("wordCloud");
-  
+
   const sourceRows = state.panel4Rows.length ? state.panel4Rows : state.rows;
   const rows = key
     ? sourceRows.filter((r) => cleanDescription(r.description).includes(key))
     : sourceRows;
+
+  const selectedValues = parseGroupValuesInput($("wcGroupValue").value);
+  const canIntersect =
+    state.panel4Rows.length &&
+    $("wcGroupCol").value.trim() &&
+    selectedValues.length > 1;
 
   summary.textContent = key
     ? `${rows.length} ticket descriptions contain "${key}".`
@@ -500,16 +570,33 @@ function renderPanel4() {
   tbody.innerHTML = "";
   rows.forEach((r) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.ticket_id || "n/a"}</td><td>${r.building || "n/a"}</td><td>${cleanDescription(r.description)}</td>`;
+    tr.innerHTML = `
+      <td>${r.ticket_id || "N/A"}</td>
+      <td>${r.building || "N/A"}</td>
+      <td>${r.group_value || "N/A"}</td>
+      <td>${cleanDescription(r.description)}</td>
+    `;
     tbody.appendChild(tr);
   });
 
-  const tokens = rows
-    .flatMap((r) => (r.description || "").toLowerCase().split(/[^a-z0-9]+/))
-    .filter((w) => w && !stopWords.has(w) && w.length > 2);
+  const unionFreq = buildUnionFreq(rows);
+  const intersectionFreq = buildIntersectionFreq(rows, selectedValues);
 
-  const freq = new Map();
-  tokens.forEach((w) => freq.set(w, (freq.get(w) || 0) + 1));
+  console.log("union word count:", unionFreq.size);
+  console.log("intersection word count:", intersectionFreq.size);
+  console.log(
+    "union top 10:",
+    [...unionFreq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
+  );
+  console.log(
+    "intersection top 10:",
+    [...intersectionFreq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
+  );
+
+  const freq =
+  state.wordCloudIntersection && canIntersect
+    ? intersectionFreq
+    : unionFreq;
 
   const topWords = [...freq.entries()].sort((a, b) => b[1] - a[1]);
   const max = Math.max(...topWords.map((x) => x[1]), 1);
@@ -522,6 +609,11 @@ function renderPanel4() {
     span.textContent = `${word} (${count})`;
     cloud.appendChild(span);
   });
+
+  const toggle = $("wcIntersectionToggle");
+  if (toggle) {
+    toggle.disabled = !canIntersect;
+  }
 }
 
 function renderPanel5() {
@@ -661,6 +753,7 @@ function setupEvents() {
 
       // optionally respect whatever is currently typed in the keyword box
       state.keyword = $("keywordInput").value || "";
+      state.wordCloudIntersection = $("wcIntersectionToggle").checked;
       renderPanel4();
 
       const groupCol = $("wcGroupCol").value.trim();
@@ -677,6 +770,11 @@ function setupEvents() {
       console.error(e);
       summary.textContent = `Word cloud API failed: ${e.message}`;
     }
+  });
+
+  $("wcIntersectionToggle").addEventListener("change", (e) => {
+    state.wordCloudIntersection = e.target.checked;
+    renderPanel4();
   });
 }
 

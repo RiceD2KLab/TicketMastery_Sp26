@@ -109,7 +109,13 @@
             <input id="keywordInput" type="search" placeholder="Search keyword in descriptions..." />
             <button id="keywordBtn" type="button">Search</button>
           </div>
-          <div id="keywordSummary" class="summary"></div>
+          <div class="summary summary-inline">
+            <span id="keywordSummary"></span>
+            <label class="switch-inline">
+              <span>Intersection</span>
+              <input id="wcIntersectionToggle" type="checkbox" />
+            </label>
+          </div>
           <div id="wordCloud" class="word-cloud"></div>
           <div class="table-wrap ticket-results-wrap">
             <table>
@@ -117,6 +123,7 @@
                 <tr>
                   <th>Ticket ID</th>
                   <th>Building</th>
+                  <th>Group</th>
                   <th>Description</th>
                 </tr>
               </thead>
