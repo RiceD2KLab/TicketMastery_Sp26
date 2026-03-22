@@ -1,5 +1,6 @@
-data/*
+data/V_OM_WORK_TASK_ASSET.csv
+data/V_OM_WORK_TASK_SURVEY.csv
+data/V_OM_WORK_TASK.csv
+# data/V_SPACE_BUILDING_DETAIL.csv
 !data/.gitkeep
-notebooks/objects_old.ipynb
-*.csv
 todo.txt
