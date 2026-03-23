@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticketmastery Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <main class="dashboard-shell">
+      <header class="hero">
+        <h1>Ticketmastery Exploratory Dashboard</h1>
+        <p>CSV-driven frontend prototype for maintenance ticket analysis.</p>
+        <div class="controls">
+          <label class="file-input">
+            <span>Load merged_tickets_assets.csv</span>
+            <input id="assetsCsvInput" type="file" accept=".csv" />
+          </label>
+          <label class="file-input">
+            <span>Load merged_tickets_assets_surveys.csv (optional)</span>
+            <input id="surveysCsvInput" type="file" accept=".csv" />
+          </label>
+          <label class="compact-control">
+            X-day window
+            <input id="xDaysInput" type="number" min="1" max="365" value="90" />
+          </label>
+          <button id="refreshBtn" type="button">Refresh Panels</button>
+        </div>
+        <p class="note">Expected core columns: <code>WORK_TASK_ID</code>, <code>DESCRIPTION</code>, <code>TASK_TYPE</code>, <code>ASSET_ID</code>, <code>ASSET_PRIMARY_LOCATION_BUILDING</code>, <code>CREATE_DATE_LTZ</code>. Optional survey columns: <code>average_survey_score</code>, <code>building</code>, <code>BASELINE_START_LTZ</code>.</p>
+      </header>
+
+      <section class="grid">
+        <article class="panel" id="panel1">
+          <h2>1) Repetitive Assets in X-day Period</h2>
+          <div id="repetitiveSummary" class="summary"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Asset ID</th>
+                  <th>Repetitive Tasks</th>
+                  <th>Avg Survey</th>
+                  <th>Class Tags</th>
+                  <th>Buildings</th>
+                </tr>
+              </thead>
+              <tbody id="repetitiveTable"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel" id="panel2">
+          <h2>2) Corrective Ticket Heat Map by Building</h2>
+          <div id="heatmapLegend" class="summary"></div>
+          <div id="heatmap" class="heatmap"></div>
+        </article>
+
+        <article class="panel" id="panel3">
+          <h2>3) Preventative vs Non-Preventative Asset Comparison</h2>
+          <div id="pmStats" class="summary"></div>
+          <div class="bars" id="pmBars"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th>With PM</th>
+                  <th>Without PM</th>
+                </tr>
+              </thead>
+              <tbody id="pmTable"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel" id="panel4">
+          <h2>4) Keyword Search + Word Cloud</h2>
+          <div class="inline-controls">
+            <label class="file-input">
+              <span>Tickets CSV</span>
+              <input id="wcTicketsCsvInput" type="file" accept=".csv" />
+            </label>
+            <label class="file-input">
+              <span>Assets CSV</span>
+              <input id="wcAssetsCsvInput" type="file" accept=".csv" />
+            </label>
+            <label class="file-input">
+              <span>Space CSV</span>
+              <input id="wcSpaceCsvInput" type="file" accept=".csv" />
+            </label>
+          </div>
+          <div class="inline-controls">
+            <select id="wcGroupCol">
+              <option value="">(overall)</option>
+              <option value="SERVICE_CLASS">SERVICE_CLASS</option>
+              <option value="REQUEST_CLASS">REQUEST_CLASS</option>
+              <option value="RESPONSIBLE_ORGANIZATION_NAME">RESPONSIBLE_ORGANIZATION_NAME</option>
+            </select>
+            <input id="wcGroupValue" type="text" placeholder="Specific Value (e.g., Electrical)" />
+            <button id="wcRunBtn" type="button">Compute Word Cloud (API)</button>
+          </div>
+          <div class="inline-controls">
+            <input id="keywordInput" type="search" placeholder="Search keyword in descriptions..." />
+            <button id="keywordBtn" type="button">Search</button>
+          </div>
+          <div class="summary summary-inline">
+            <span id="keywordSummary"></span>
+            <label class="switch-inline">
+              <span>Intersection</span>
+              <input id="wcIntersectionToggle" type="checkbox" />
+            </label>
+          </div>
+          <div id="wordCloud" class="word-cloud"></div>
+          <div class="table-wrap ticket-results-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ticket ID</th>
+                  <th>Building</th>
+                  <th>Group</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody id="keywordTable"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel" id="panel5">
+          <h2>5) Asset ID Data Sparsity</h2>
+          <div id="sparsitySummary" class="summary"></div>
+          <div id="sparsityBars" class="bars"></div>
+        </article>
+
+        <article class="panel" id="panel6">
+          <h2>6) Outlier Features (Isolation Forest/Regression)</h2>
+          <p class="note">
+            Holding final model implementation until we define target variable and feature set.
+            Temporary preview below uses a simple z-score heuristic.
+          </p>
+          <div id="outlierSummary" class="summary"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ticket ID</th>
+                  <th>Asset ID</th>
+                  <th>Building</th>
+                  <th>Heuristic Score</th>
+                </tr>
+              </thead>
+              <tbody id="outlierTable"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
