@@ -1,5 +1,5 @@
 import pandas as pd
-from WordCloud import WordCloud
+from dashboard.WordCloud import WordCloud
 
 """
 Load asset, ticket, and space CSV data and return a merged DataFrame with

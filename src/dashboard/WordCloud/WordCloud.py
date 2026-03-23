@@ -1,7 +1,7 @@
 import pandas as pd
 import re
 from collections import Counter
-from WordCloud.StopWords import STOP_WORDS, SHORT_KEEP
+from dashboard.WordCloud.StopWords import STOP_WORDS, SHORT_KEEP
 
 """
     Normalize and tokenize free-text descriptions for downstream word-frequency analysis.

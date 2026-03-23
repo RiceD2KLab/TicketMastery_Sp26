@@ -4,8 +4,7 @@ import uvicorn
 import tempfile
 import os
 
-from Utils import Utils
-from WordCloud import WordCloud
+from utils import wordCloudProcessing
 
 app = FastAPI(title="WordCloud API", version="0.1.0")
 
@@ -52,7 +51,7 @@ async def generate_wordcloud(
 
         assets_path, tickets_path, space_path = tmp_paths[0], tmp_paths[1], tmp_paths[2]
 
-        df = Utils.process_data(tickets_path, assets_path, space_path)
+        df = wordCloudProcessing.process_data(tickets_path, assets_path, space_path)
 
         allowed_group_cols = {
             "SERVICE_CLASS",
