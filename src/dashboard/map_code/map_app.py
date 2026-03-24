@@ -24,7 +24,7 @@ def load_data(csv):
     df_1['ASSIGNED_DATE_LTZ'] = pd.to_datetime(df_1['ASSIGNED_DATE_LTZ'])
     return df_1
 
-raw = load_data(r'C:\Users\EC712\Documents\school\DSCI_435\data_sheets\TICKETS_WITH_COORDS.csv')
+raw = load_data(r'../../data/TICKETS_WITH_COORDS.csv')
 
 df_1 = raw.copy()
 
