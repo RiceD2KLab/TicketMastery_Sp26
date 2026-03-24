@@ -1,9 +1,11 @@
 # %%
+import sys
+import os
+sys.path.append(os.path.abspath('../../data'))
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
 import datetime as dt
-
 # %%
 #cache data set 
 @st.cache_data
@@ -24,7 +26,8 @@ def load_data(csv):
     df_1['ASSIGNED_DATE_LTZ'] = pd.to_datetime(df_1['ASSIGNED_DATE_LTZ'])
     return df_1
 
-raw = load_data(r'C:\Users\EC712\OneDrive\Documents\school\DSCI_435\data_sheets\TICKETS_WITH_COORDS.csv')
+# Load data from data directory at root
+raw = load_data("TICKETS_WITH_COORDS.csv")
 
 df_1 = raw.copy()
 

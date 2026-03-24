@@ -19,16 +19,15 @@ In coordination with our sponsors at FC\&P, numerous directions have been discus
 
 ### <u>Dashboard</u>
 
-**Note: This dashboard is not finished, and is in a WIP State. Following our "cupcake" design pipeline, the team is creating and testing panels separately before embedding them into the dashboard overlay. The 3D map and "key-word cloud" panels for the dashboard are currently in development state — progress can be viewed in **
+**Note: This dashboard is not finished, and is in a WIP State. Following our "cupcake" design pipeline, the team is creating and testing panels separately before embedding them into the dashboard overlay. The 3D map and "key-word cloud" panels for the dashboard are currently in development state — progress on the 3D map can be viewed in the `map` folder, and the current status of the word cloud is viewable in the current stage of the dashboard.**
 
 To view the interactive dashboard (prototype) constructed for FC&P:
 
 1. Open `src/dashboard/index.html` in a browser
-2. Download the cleaned & anonymized work task data at `data/TA_data.csv`.
+2. Download the cleaned & anonymized work task data at `data/TA_data.csv` (not provided for data security).
 3. In the top panel, upload the file named `df_merged_tickets_assets`
 4. Click "reload dashboard" to populate dashboard panels with the work task data.
 
-REMEMBER TO RE-DOWNLOAD CLEANED MERGED TICKETS ASSETS DATA
 
 #### Panel 4: Keyword Search + Word Cloud
 
