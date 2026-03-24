@@ -51,7 +51,7 @@ Data exploration, statistical analyses, and machine learning modeling is outline
 
 - **`repetitive_task_prediction.ipynb`:** Random forests and XGBoost models are experimented with, in order to predict whether a given ticket is likely to reference a chronic building issue ('repetitive ticket'). SMOTE and Threshold tuning are implemented due to the inbalanced classes (18.6:1 ratio of repetitive to non-repetitive tickets), which increase the accuracy of the XGBoost model significantly. The models accurately predict non-repetitive tickets; however, due to the unbalanced data and lack of important information in the features used for training the models are only able to reach a maximum of 46% accuracy in correctly classifying a repetitive ticket as repetitive. We plan to leverage user-defined description data by adding a "keywords" feature to improve the accuracy of these classification models.
 
-- **`request_class_classification.ipynb`:** A random forest model was implemented to predict which of 400 request classes (describing the type of maintenance request) a ticket calls for. 
+- **`request_class_classification.ipynb`:** A random forest model was implemented to predict which of 400 request classes (describing the type of maintenance request) a ticket calls for. Although there are 400 request classes, the actual number of observances for 80% of these classes was fewer than 250. This, in turn, affected the random forest's performance, which is discussed further in the file. The sponsor also requested that the number of request classes be reduced by grouping similar classes together. This will be explored in the future following these findings. 
 
 
 *This project was completed for the Rice Univerisity Data Science Capstone Project (Spring 2026)*
