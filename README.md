@@ -78,7 +78,7 @@ Data exploration, statistical analyses, and machine learning modeling is outline
 
 - **`repetitive_objects.ipynb`:** Our revised and improved detection methodology for detecting 'repetitive tasks.' Rather than using ASSET_IDs, corrective tickets are grouped by the broken "object" they are likely to reference using the SPACE, FLOOR, BUILDING, and SERVICE_REQUEST_CLASS features. Entries of the original dataset without space information (tickets that do not reference a specific space within a building) are dropped for the sake of this analysis, but we are still left with over 120,000 observations to work with — enough to perform robust analysis. We find that this so-called "Object ID" detection strategy provides much more believable results than the implementation using Asset IDs in `repetitive_assets.ipynb` since the distribution of implied object failure rates more closely follows a Power Law.
 
-- **`ticket_heat_map.ipynb`:** ...
+- **`ticket_heat_map.ipynb`:** This map code merges the two datasets into one and maps tickets to their respective location the Rice campus. The map also accounts for the number of tickets at each location, with a corresponding height and color for each location. The higher and warmer the color, the larger number of tickets. To run this code, one must install pandas for data handling and manipulation, and pydeck for map plotting. In the full interactive map, one must also install streamlit. Additionally, onec can see the breakdown of tickets by building class to see which classes need more attention compared to others (note, that this is overall tickets and is not normalized with respect to number of buildings per class).
 
 
 #### 2. Modeling (`src/modeling/`)
@@ -88,4 +88,4 @@ Data exploration, statistical analyses, and machine learning modeling is outline
 - **`request_class_classification.ipynb`:** A random forest model was implemented to predict which of 400 request classes (describing the type of maintenance request) a ticket calls for. 
 
 
-*This project was completed for the Rice University Data Science Capstone Project (Spring 2026)*
+*This project was completed for the Rice Univerisity Data Science Capstone Project (Spring 2026)*
