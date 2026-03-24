@@ -19,7 +19,7 @@ In coordination with our sponsors at FC\&P, numerous directions have been discus
 
 ### <u>Dashboard</u>
 
-**Note: This dashboard is not finished, and is in a WIP State. Following our "cupcake" design pipeline, the team is creating and testing panels separately before embedding them into the dashboard overlay. The 3D map and "key-word cloud" panels for the dashboard are currently in development state — progress can be viewed in....**
+**Note: This dashboard is not finished, and is in a WIP State. Following our "cupcake" design pipeline, the team is creating and testing panels separately before embedding them into the dashboard overlay. The 3D map and "key-word cloud" panels for the dashboard are currently in development state — progress can be viewed in **
 
 To view the interactive dashboard (prototype) constructed for FC&P:
 

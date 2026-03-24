@@ -7,21 +7,19 @@ import warnings
 warnings.filterwarnings('ignore')
  
 
- 
-def fit_truncated_distributions(data_series, title=""):
-    """
-    Fit truncated distributions to count data where zero values are missing.
-    
-    Parameters:
-    - data_series : pd.Series
-        Index = number of repetitive tasks, Values = count of objects/assets
-    - title : str
-        Title for the distribution (e.g., 'Objects' or 'Assets')
-    
-    Returns:
-    - dict : Fitting results and metrics
-    """
-    
+ """
+Fit truncated distributions to count data where zero values are missing.
+
+Parameters:
+- data_series : pd.Series
+    Index = number of repetitive tasks, Values = count of objects/assets
+- title : str
+    Title for the distribution (e.g., 'Objects' or 'Assets')
+
+Returns:
+- dict : Fitting results and metrics
+"""
+def fit_truncated_distributions(data_series, title=""):    
     # Extract x (counts) and y (frequencies)
     x_data = data_series.index.values.astype(float)
     y_data = data_series.values.astype(float)
