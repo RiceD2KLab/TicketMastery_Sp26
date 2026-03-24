@@ -4,34 +4,95 @@ const state = {
   keyword: "",
   rawAssetsRows: [],
   rawSurveyRows: [],
+  panel4Rows: [],
+  wordCloudIntersection: false,
 };
 
 const stopWords = new Set([
-  "the",
-  "a",
-  "an",
-  "to",
-  "for",
-  "in",
-  "of",
-  "on",
-  "and",
-  "at",
-  "with",
-  "is",
-  "are",
-  "was",
-  "were",
-  "from",
-  "by",
-  "or",
-  "as",
-  "it",
-  "this",
-  "that",
-  "be",
-  "has",
-  "have",
+  // uninformative
+  "the", "a", "an", "to", "for", "in", "of", "on", "and", "at",
+  "with", "is", "are", "was", "were", "from", "by", "or", "as",
+  "it", "this", "that", "be", "has", "have", "not", "non",
+
+  // politeness filler
+  "thank", "thanks", "hello", "hope", "please", "sure",
+
+  // request / ticketing system language
+  "contact", "questions", "question", "attached", "detail", "details",
+  "info", "information", "request", "requesting", "requester",
+  "order", "task", "service", "services", "support", "assist",
+  "assistance", "provide", "provided", "generated", "assign",
+  "assigned", "caller", "contacted", "regarding", "related",
+  "billable", "vendor", "expenses", "charges", "charge", "cost",
+  "requisitions", "department", "project", "team", "operations",
+
+  // numeric
+  "one", "any", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th",
+  "8th", "9th", "10th", "11th", "12th", "13th",
+
+  // generic verbs 
+  "need", "needs", "needed", "like", "just", "make", "made",
+  "come", "coming", "go", "going", "get", "gets", "getting",
+  "having", "use", "used", "using", "possible", "currently",
+  "additional", "following", "good", "let", "know", "look",
+  "looks", "want", "really", "able", "appears", "believe",
+  "think", "said", "note", "see",
+
+  // vague issues
+  "issue", "issues", "problem", "problems", "out",
+
+  // spatial terms
+  "center", "room", "rooms", "floor", "floors", "hall", "hallway",
+  "hallways", "office", "offices", "area", "areas", "space",
+  "outside", "inside", "near", "located", "location", "main",
+  "right", "left", "north", "south", "east", "west", "corner",
+  "level", "suite", "basement", "lobby", "entry", "entrance",
+  "storage", "closet", "dock", "loading", "station", "courtyard",
+  "patio", "garage", "quad", "section", "middle", "rear",
+  "building", "buildings", "house", "college", "commons",
+  "lab", "classroom", "auditorium", "conference", "lecture",
+  "library", "lounge", "servery", "dining", "venue", "campus",
+  "university", "shop", "place",
+
+  // time references
+  "today", "tomorrow", "yesterday", "morning", "afternoon",
+  "evening", "night", "day", "days", "week", "weeks",
+  "monday", "tuesday", "wednesday", "thursday", "friday",
+  "saturday", "sunday", "january", "february", "march", "april",
+  "june", "july", "august", "september", "october", "november",
+  "december", "jan", "feb", "oct",
+
+  // event context 
+  "event", "meeting", "game", "concert", "football", "annual",
+  "student", "students", "staff", "faculty", "people", "public",
+  "president", "alumni",
+
+  // contact 
+  "phone", "email", "ext", "number",
+
+  // gendered labels
+  "men", "women", "mens", "womens", "ladies",
+
+  // campus identifiers
+  "rice", "edu", "brc", "grb", "dbh", "alm", "coa", "fsc", "rmc", "rupd",
+  "duncan", "brown", "baker", "lovett", "fondren", "hanszen",
+  "martel", "mcmurtry", "sewall", "wiess", "brockman", "anderson",
+  "kraft", "moody", "mcnair", "rawls", "huff", "keck", "ryon",
+  "tudor", "garrett", "jones",
+
+  // personal names 
+  "rodriguez", "monica", "frydl", "juan", "david", "matt", "garcia",
+  "munira", "vejlani", "olivia", "james", "dewayne", "sid", "allen",
+  "mosquinski", "bradley", "calvin", "abbatessa", "gutierrez",
+  "brad", "thang", "anh", "mike", "maria", "francisco", "rudy",
+  "hannes", "jonathan", "sanchez", "minh", "harper", "urbano",
+  "nguyen", "benny", "waldron", "thacker", "layton", "herring",
+  "connor", "tegan", "tegang",
+
+  // noise
+  "doesn", "isn", "won", "don", "didn", "aren", "wasn", "weren",
+  "hasn", "haven", "couldn", "wouldn", "shouldn", "attn", "xxxx",
+  "00am",
 ]);
 
 const $ = (id) => document.getElementById(id);
@@ -107,6 +168,76 @@ function parseDate(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+function cleanDescription(text) {
+  return (text || "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w && w.length > 2 && !stopWords.has(w))
+    .join(" ");
+}
+
+function parseGroupValuesInput(text) {
+  return (text || "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+function tokenizeDescription(text) {
+  return (text || "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w && w.length > 2 && !stopWords.has(w));
+}
+
+function buildUnionFreq(rows) {
+  const freq = new Map();
+
+  rows.forEach((r) => {
+    tokenizeDescription(r.description).forEach((w) => {
+      freq.set(w, (freq.get(w) || 0) + 1);
+    });
+  });
+
+  return freq;
+}
+
+function buildIntersectionFreq(rows, selectedValues) {
+  const normalizedSelected = selectedValues.map((v) => v.trim().toLowerCase());
+  const byGroupFreq = new Map();
+
+  rows.forEach((r) => {
+    const groupValue = (r.group_value || "").trim().toLowerCase();
+    if (!normalizedSelected.includes(groupValue)) return;
+
+    if (!byGroupFreq.has(groupValue)) {
+      byGroupFreq.set(groupValue, new Map());
+    }
+
+    const freq = byGroupFreq.get(groupValue);
+    tokenizeDescription(r.description).forEach((w) => {
+      freq.set(w, (freq.get(w) || 0) + 1);
+    });
+  });
+
+  if (byGroupFreq.size < 2) {
+    return buildUnionFreq(rows);
+  }
+
+  const groupMaps = [...byGroupFreq.values()];
+  const sharedWords = [...groupMaps[0].keys()].filter((word) =>
+    groupMaps.every((m) => m.has(word))
+  );
+
+  const intersectionFreq = new Map();
+  sharedWords.forEach((word) => {
+    const total = groupMaps.reduce((sum, m) => sum + (m.get(word) || 0), 0);
+    intersectionFreq.set(word, total);
+  });
+
+  return intersectionFreq;
+}
+
 function normalizeRows(rawRows) {
   return rawRows.map((r) => {
     const dateSource = r.baseline_start_ltz || r.create_date_ltz || r.created_at;
@@ -128,6 +259,15 @@ function normalizeRows(rawRows) {
       event_date: eventDate,
     };
   });
+}
+
+function normalizeApiTicketRows(rows) {
+  return rows.map((r) => ({
+    ticket_id: r.WORK_TASK_ID || "",
+    building: r.BUILDING || "Unknown",
+    description: r.DESCRIPTION || "",
+    group_value: r.GROUP_VALUE || "",
+  }));
 }
 
 function mergeRawRowsByTicketId(assetRows, surveyRows) {
@@ -208,6 +348,43 @@ function repetitiveTasksWithinWindow(rows, windowDays) {
   });
 
   return repeatedTasks;
+}
+
+async function fetchWordCloudFromApi() {
+  const ticketsFile = $("wcTicketsCsvInput").files?.[0];
+  const assetsFile = $("wcAssetsCsvInput").files?.[0];
+  const spaceFile = $("wcSpaceCsvInput").files?.[0];
+
+  if (!ticketsFile || !assetsFile || !spaceFile) {
+    throw new Error("Upload Tickets, Assets, and Space CSVs for the word cloud.");
+  }
+
+  const groupCol = $("wcGroupCol").value.trim();
+  const groupValue = $("wcGroupValue").value.trim();
+
+  const fd = new FormData();
+  fd.append("tickets_csv", ticketsFile);
+  fd.append("assets_csv", assetsFile);
+  fd.append("space_csv", spaceFile);
+
+  if (groupCol) fd.append("group_col", groupCol);
+  if (groupCol && groupValue) fd.append("group_values", groupValue);
+
+  const resp = await fetch("http://localhost:8000/wordcloud", {
+    method: "POST",
+    body: fd,
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`API ${resp.status}: ${txt}`);
+  }
+
+  const data = await resp.json();
+
+  return {
+    ticketRows: data.ticket_rows || []
+  };
 }
 
 function renderPanel1() {
@@ -375,29 +552,53 @@ function renderPanel4() {
   const tbody = $("keywordTable");
   const cloud = $("wordCloud");
 
+  const sourceRows = state.panel4Rows.length ? state.panel4Rows : state.rows;
   const rows = key
-    ? state.rows.filter((r) => (r.description || "").toLowerCase().includes(key))
-    : state.rows;
+    ? sourceRows.filter((r) => cleanDescription(r.description).includes(key))
+    : sourceRows;
+
+  const selectedValues = parseGroupValuesInput($("wcGroupValue").value);
+  const canIntersect =
+    state.panel4Rows.length &&
+    $("wcGroupCol").value.trim() &&
+    selectedValues.length > 1;
 
   summary.textContent = key
     ? `${rows.length} ticket descriptions contain "${key}".`
     : `Showing all ${rows.length} descriptions. Enter a keyword to filter.`;
 
   tbody.innerHTML = "";
-  rows.slice(0, 25).forEach((r) => {
+  rows.forEach((r) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.ticket_id || "n/a"}</td><td>${r.building || "n/a"}</td><td>${r.description || ""}</td>`;
+    tr.innerHTML = `
+      <td>${r.ticket_id || "N/A"}</td>
+      <td>${r.building || "N/A"}</td>
+      <td>${r.group_value || "N/A"}</td>
+      <td>${cleanDescription(r.description)}</td>
+    `;
     tbody.appendChild(tr);
   });
 
-  const tokens = rows
-    .flatMap((r) => (r.description || "").toLowerCase().split(/[^a-z0-9]+/))
-    .filter((w) => w && !stopWords.has(w) && w.length > 2);
+  const unionFreq = buildUnionFreq(rows);
+  const intersectionFreq = buildIntersectionFreq(rows, selectedValues);
 
-  const freq = new Map();
-  tokens.forEach((w) => freq.set(w, (freq.get(w) || 0) + 1));
+  console.log("union word count:", unionFreq.size);
+  console.log("intersection word count:", intersectionFreq.size);
+  console.log(
+    "union top 10:",
+    [...unionFreq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
+  );
+  console.log(
+    "intersection top 10:",
+    [...intersectionFreq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
+  );
 
-  const topWords = [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30);
+  const freq =
+  state.wordCloudIntersection && canIntersect
+    ? intersectionFreq
+    : unionFreq;
+
+  const topWords = [...freq.entries()].sort((a, b) => b[1] - a[1]);
   const max = Math.max(...topWords.map((x) => x[1]), 1);
 
   cloud.innerHTML = "";
@@ -408,6 +609,11 @@ function renderPanel4() {
     span.textContent = `${word} (${count})`;
     cloud.appendChild(span);
   });
+
+  const toggle = $("wcIntersectionToggle");
+  if (toggle) {
+    toggle.disabled = !canIntersect;
+  }
 }
 
 function renderPanel5() {
@@ -536,7 +742,42 @@ function setupEvents() {
     if (!file) return;
     await loadFileToRawRows(file, "rawSurveyRows");
   });
+
+  $("wcRunBtn").addEventListener("click", async () => {
+    const summary = $("keywordSummary");
+    try {
+      summary.textContent = "Computing word cloud via API...";
+      const apiData = await fetchWordCloudFromApi();
+
+      state.panel4Rows = normalizeApiTicketRows(apiData.ticketRows);
+
+      // optionally respect whatever is currently typed in the keyword box
+      state.keyword = $("keywordInput").value || "";
+      state.wordCloudIntersection = $("wcIntersectionToggle").checked;
+      renderPanel4();
+
+      const groupCol = $("wcGroupCol").value.trim();
+      const groupValue = $("wcGroupValue").value.trim();
+
+      if (!groupCol) {
+        summary.textContent = `Loaded ${state.panel4Rows.length} tickets and word cloud.`;
+      } else if (groupValue) {
+        summary.textContent = `Loaded ${state.panel4Rows.length} tickets for ${groupCol} = ${groupValue}.`;
+      } else {
+        summary.textContent = `Loaded ${state.panel4Rows.length} tickets for ${groupCol}.`;
+      }
+    } catch (e) {
+      console.error(e);
+      summary.textContent = `Word cloud API failed: ${e.message}`;
+    }
+  });
+
+  $("wcIntersectionToggle").addEventListener("change", (e) => {
+    state.wordCloudIntersection = e.target.checked;
+    renderPanel4();
+  });
 }
+
 
 setupEvents();
 state.rawAssetsRows = parseCsv(sampleAssetsCsv);

@@ -7,3 +7,10 @@ data/V_SPACE_BUILDING_DETAIL.csv
 !data/.gitkeep
 todo.txt
 *.csv
+
+objects_old.ipynb
+repetitive_task_detector.py
+repetitive_task_explorer.jsx
+USAGE_GUIDE.md
+data/
+data-exploration/

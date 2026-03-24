@@ -82,17 +82,48 @@
         <article class="panel" id="panel4">
           <h2>4) Keyword Search + Word Cloud</h2>
           <div class="inline-controls">
+            <label class="file-input">
+              <span>Tickets CSV</span>
+              <input id="wcTicketsCsvInput" type="file" accept=".csv" />
+            </label>
+            <label class="file-input">
+              <span>Assets CSV</span>
+              <input id="wcAssetsCsvInput" type="file" accept=".csv" />
+            </label>
+            <label class="file-input">
+              <span>Space CSV</span>
+              <input id="wcSpaceCsvInput" type="file" accept=".csv" />
+            </label>
+          </div>
+          <div class="inline-controls">
+            <select id="wcGroupCol">
+              <option value="">(overall)</option>
+              <option value="SERVICE_CLASS">SERVICE_CLASS</option>
+              <option value="REQUEST_CLASS">REQUEST_CLASS</option>
+              <option value="RESPONSIBLE_ORGANIZATION_NAME">RESPONSIBLE_ORGANIZATION_NAME</option>
+            </select>
+            <input id="wcGroupValue" type="text" placeholder="Specific Value (e.g., Electrical)" />
+            <button id="wcRunBtn" type="button">Compute Word Cloud (API)</button>
+          </div>
+          <div class="inline-controls">
             <input id="keywordInput" type="search" placeholder="Search keyword in descriptions..." />
             <button id="keywordBtn" type="button">Search</button>
           </div>
-          <div id="keywordSummary" class="summary"></div>
+          <div class="summary summary-inline">
+            <span id="keywordSummary"></span>
+            <label class="switch-inline">
+              <span>Intersection</span>
+              <input id="wcIntersectionToggle" type="checkbox" />
+            </label>
+          </div>
           <div id="wordCloud" class="word-cloud"></div>
-          <div class="table-wrap">
+          <div class="table-wrap ticket-results-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Ticket ID</th>
                   <th>Building</th>
+                  <th>Group</th>
                   <th>Description</th>
                 </tr>
               </thead>

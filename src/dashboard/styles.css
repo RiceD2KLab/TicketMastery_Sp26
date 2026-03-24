@@ -211,6 +211,14 @@ select {
   gap: 0.4rem;
   margin-bottom: 0.6rem;
   min-height: 60px;
+  max-height: 260px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: flex-start;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
 }
 
 .word-cloud span {
@@ -219,6 +227,25 @@ select {
   border-radius: 20px;
   padding: 0.2rem 0.45rem;
   color: #16413a;
+}
+
+.ticket-results-wrap {
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.summary-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.switch-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 @keyframes rise {
