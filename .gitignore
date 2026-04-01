@@ -14,3 +14,5 @@ repetitive_task_explorer.jsx
 USAGE_GUIDE.md
 data/
 data-exploration/
+.DS_Store
+**/.DS_Store
