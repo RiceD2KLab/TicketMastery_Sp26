@@ -1,12 +1,47 @@
 import numpy as np
 import pandas as pd
 
-"""
-Docstring
-Detects repetitive tasks based on the object defined by the grouping in group_cols.
 
-A task is defined as 'repetitive' if there is a single other subsequent task in the same
-'object' grouping that occurs between num_days and min_days days.
+"""
+Detect repetitive maintenance tasks by object within a specified time window.
+
+This function identifies corrective tasks that recur on the same object (grouped
+by specified columns) within a target time interval. A task is flagged as repetitive
+if a subsequent task occurs between min_days and num_days after it.
+
+Parameters
+----------
+df_tickets_assets : pd.DataFrame
+    Merged dataframe of tickets and assets with columns: SERVICE_CLASS,
+    REQUEST_CLASS, BUILDING, CREATE_DATE_LTZ, TASK_TYPE, and the grouping columns
+    specified by group_cols. Must have ASSET_ID or similar identifier columns.
+group_cols : list of str
+    Column names to group by (e.g., ['SERVICE_CLASS', 'REQUEST_CLASS', 'BUILDING']).
+    Defines what constitutes a "unique object" for repetition detection.
+num_days : int
+    Maximum days between tasks for them to be considered repetitive. Tasks occurring
+    more than num_days apart are not flagged as repetitive.
+min_days : int, default 3
+    Minimum days between tasks for them to be considered repetitive. Tasks occurring
+    fewer than min_days apart are not flagged (e.g., to exclude same-day corrections).
+buildings : list of str, optional
+    If provided, filter to only these buildings. If None, all buildings are included.
+verbose : bool, default False
+    If True, print diagnostic information including task counts and number of groups.
+
+Returns
+-------
+tuple of (pd.DataFrame, dict, dict)
+    df_tickets_filtered_by_object : pd.DataFrame
+        DataFrame of only the repetitive tasks (first task in each repetitive pair).
+    object_repetitive_dict : dict
+        Maps object_id (str) -> list of row indices of repetitive tasks for that object.
+    all_objects_dict : dict
+        Maps object_id (str) -> total count of corrective tasks for that object.
+
+Notes
+-----
+- Only TASK_TYPE='Corrective' tasks are considered for repetition detection.
 """
 
 def detect_repetitive_objects(df_tickets_assets, group_cols, num_days, min_days=3, buildings=None, verbose=False):
@@ -19,7 +54,7 @@ def detect_repetitive_objects(df_tickets_assets, group_cols, num_days, min_days=
 
     if verbose:
         print(num_days)
-        print(f"Number of columns pre-corrective: {len(df_merged_assets_sorted)}")
+        print(f"Number of rows pre-corrective: {len(df_merged_assets_sorted)}")
 
     df_corrective = df_merged_assets_sorted[
         df_merged_assets_sorted['TASK_TYPE'] == 'Corrective'
@@ -69,10 +104,27 @@ def detect_repetitive_objects(df_tickets_assets, group_cols, num_days, min_days=
     return df_tickets_filtered_by_object, object_repetitive_dict, all_objects_dict
 
 
+"""
+Create interactive bar chart of asset recurrence counts and save as HTML.
 
-# Here, we check for assets that have been repaired for corrective work more than once in a span of 90 days.
-# The 'Number of Recurrences' is the number of these 90-day intervals present for that specific asset in the data.
+This function generates an interactive Plotly bar chart showing how many times each
+asset appears in a repetitive tasks dataset. The chart is colored by recurrence count
+and includes asset location information on hover.
 
+Parameters
+----------
+df_tickets_assets : pd.DataFrame
+    Dataframe of repetitive tasks containing columns: ASSET_NAME and 
+    ASSET_PRIMARY_LOCATION. Typically the output of detect_repetitive_objects.
+output_html_filename : str
+    Full file path (including filename) where the HTML chart will be saved.
+    File extension should be .html.
+
+Returns
+-------
+None
+    Saves interactive HTML file to disk and prints confirmation message.
+"""
 def create_repetitive_assets_html(df_tickets_assets, output_html_filename):
     asset_recurrence_counts = df_tickets_assets['ASSET_NAME'].value_counts()
     print("Recurrence counts of ASSET_NAME calculated:")

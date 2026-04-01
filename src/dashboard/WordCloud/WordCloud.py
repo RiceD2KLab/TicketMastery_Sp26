@@ -4,13 +4,13 @@ from collections import Counter
 from dashboard.WordCloud.StopWords import STOP_WORDS, SHORT_KEEP
 
 """
-    Normalize and tokenize free-text descriptions for downstream word-frequency analysis.
-    Args:
-        text (str): Raw text to clean and tokenize.
+Normalize and tokenize free-text descriptions for downstream word-frequency analysis.
+Args:
+    text (str): Raw text to clean and tokenize.
 
-    Returns:
-        list[str]: Ordered list of filtered tokens.
-    """
+Returns:
+    list[str]: Ordered list of filtered tokens.
+"""
 def clean_and_tokenize(text):
     text = text.lower()
     text = re.sub(r'[^a-z\s]', ' ', text) 

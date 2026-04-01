@@ -1,4 +1,4 @@
-data/TA_data.csv
+data/*
 data/TAS_data.csv
 data/V_OM_WORK_TASK_ASSET.csv
 data/V_OM_WORK_TASK_SURVEY.csv
