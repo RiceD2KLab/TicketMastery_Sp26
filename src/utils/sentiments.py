@@ -8,6 +8,8 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 
+# Constants
+
 KEEP_FROM_SKLEARN = {
     "still", "again", "same", "off", "out", "down"
 }
@@ -98,6 +100,22 @@ nltk.download("vader_lexicon")
 sia = SentimentIntensityAnalyzer()
 
 def clean_text(text):
+    """
+    Normalize a text value by stripping whitespace and collapsing internal spaces.
+
+    Returns an empty string if the input is NaN or None.
+
+    Parameters
+    ----------
+    text : any
+        Raw text value, possibly NaN.
+
+    Returns
+    -------
+    str
+        Cleaned text string, or "" if input was null.
+    """
+
     if pd.isna(text):
         return ""
     text = str(text)
@@ -105,6 +123,22 @@ def clean_text(text):
     return text
 
 def sentiment_score(text):
+    """
+    Compute the VADER compound sentiment score for a given text.
+
+    Cleans the input text before scoring. Returns NaN if the cleaned
+    text is empty.
+
+    Parameters
+    ----------
+    text : any
+        Raw text value to score.
+
+    Returns
+    -------
+    float
+        VADER compound score in [-1.0, 1.0], or np.nan if text is empty.
+    """
     text = clean_text(text)
     if text == "":
         return np.nan
@@ -112,6 +146,24 @@ def sentiment_score(text):
 
 
 def print_sentiment_extremes(df, text_col, sentiment_col=None, n=5):
+    """
+    Print the highest and lowest sentiment rows in a DataFrame.
+
+    Displays the top and bottom n rows ranked by a sentiment column,
+    showing WORK_TASK_ID, SERVICE_CLASS, REQUEST_CLASS, the source text,
+    and the sentiment score (only columns that exist in the DataFrame).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing text and sentiment columns.
+    text_col : str
+        Name of the column containing the source text.
+    sentiment_col : str, optional
+        Name of the sentiment score column. Defaults to "{text_col}_SENTIMENT".
+    n : int, optional
+        Number of extreme rows to display at each end. Default is 5.
+    """
     if sentiment_col is None:
         sentiment_col = f"{text_col}_SENTIMENT"
 
@@ -146,6 +198,22 @@ def print_sentiment_extremes(df, text_col, sentiment_col=None, n=5):
 
 
 def clean_and_tokenize(text):
+    """
+    Lowercase, strip non-alpha characters, and tokenize a text string.
+
+    Removes stopwords and tokens shorter than 3 characters, unless the
+    token is in SHORT_KEEP.
+
+    Parameters
+    ----------
+    text : str
+        Raw text to tokenize.
+
+    Returns
+    -------
+    list of str
+        Filtered list of word tokens.
+    """
     text = text.lower()
     text = re.sub(r'[^a-z\s]', ' ', text)  # remove punctuation/numbers
     tokens = text.split()
@@ -156,6 +224,29 @@ def clean_and_tokenize(text):
 
 
 def word_frequency(df, group_col=None, group_value=None):
+    """
+    Count word frequencies from a tokenized column, optionally grouped.
+
+    Reads tokens from the "TOKENS" column of df. Words appearing only
+    once are excluded. If group_col is provided, counts are computed per
+    group. If group_value is also provided, the result is filtered to
+    that single group value.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with a "TOKENS" column containing lists of strings.
+    group_col : str, optional
+        Column to group counts by. If None, counts are computed globally.
+    group_value : any, optional
+        A specific value within group_col to filter to before counting.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns [group_col (if grouped), "WORD", "COUNT"],
+        sorted by COUNT descending (or by group then COUNT if grouped).
+    """
     grouped_counts = []
 
     # Default
@@ -192,6 +283,31 @@ def word_frequency(df, group_col=None, group_value=None):
 
 
 def top_n_words_per_group(df, group_col, n=5, output_csv=None, group_value=None):
+    """
+    Return the top n most frequent words for each group in a column.
+
+    Wraps word_frequency() and selects the top n words per unique value
+    in group_col. If group_value is specified, returns the top n words
+    for that single group only.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with a "TOKENS" column containing lists of strings.
+    group_col : str
+        Column to group by.
+    n : int, optional
+        Number of top words to return per group. Default is 5.
+    output_csv : str, optional
+        File path to save the result as a CSV. Skipped if None.
+    group_value : any, optional
+        A specific group value to restrict results to.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns [group_col, "WORD", "COUNT"].
+    """
     # Get word counts using your existing function
     wf = word_frequency(df, group_col=group_col, group_value=group_value)
 
@@ -215,6 +331,23 @@ def top_n_words_per_group(df, group_col, n=5, output_csv=None, group_value=None)
 
 
 def get_top_groups_by_volume(df, group_col, top_k=5):
+    """
+    Return the top k most frequent values in a column by row count.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Source DataFrame.
+    group_col : str
+        Column to rank by value frequency.
+    top_k : int, optional
+        Number of top values to return. Default is 5.
+
+    Returns
+    -------
+    list of str
+        Top k values in group_col, ordered by descending frequency.
+    """
     return (
         df[group_col]
         .dropna()
@@ -226,6 +359,31 @@ def get_top_groups_by_volume(df, group_col, top_k=5):
     )
 
 def get_top_words_for_top_groups(df, group_col, top_k_groups=5, n_words=5):
+    """
+    Get the top words for the highest-volume groups in a column.
+
+    Identifies the top_k_groups most frequent groups, then returns the
+    top n_words words per group filtered to only those groups.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with a "TOKENS" column containing lists of strings.
+    group_col : str
+        Column to group by.
+    top_k_groups : int, optional
+        Number of top groups to include. Default is 5.
+    n_words : int, optional
+        Number of top words per group. Default is 5.
+
+    Returns
+    -------
+    top_groups : list of str
+        The top k group values by row volume.
+    top_words : pd.DataFrame
+        DataFrame with columns [group_col, "WORD", "COUNT"] filtered to
+        top_groups.
+    """
     top_groups = get_top_groups_by_volume(df, group_col, top_k=top_k_groups)
 
     top_words = top_n_words_per_group(df, group_col=group_col, n=n_words).copy()
@@ -235,6 +393,22 @@ def get_top_words_for_top_groups(df, group_col, top_k_groups=5, n_words=5):
     return top_groups, top_words
 
 def plot_top_word_bars(top_words_df, group_col, figsize=(14, 10)):
+    """
+    Plot a horizontal bar chart of top words for each group.
+
+    Creates one subplot per unique group value in top_words_df, with
+    words on the y-axis and their counts on the x-axis.
+
+    Parameters
+    ----------
+    top_words_df : pd.DataFrame
+        DataFrame with columns [group_col, "WORD", "COUNT"], typically
+        the output of top_n_words_per_group().
+    group_col : str
+        Column identifying the group each word belongs to.
+    figsize : tuple of (float, float), optional
+        Figure dimensions in inches. Default is (14, 10).
+    """
     groups = top_words_df[group_col].dropna().unique().tolist()
     if not groups:
         print(f"No data to plot for {group_col}.")
@@ -258,6 +432,33 @@ def plot_top_word_bars(top_words_df, group_col, figsize=(14, 10)):
     plt.show()
 
 def plot_top_word_heatmap(top_words_df, group_col, top_groups, normalize=True, figsize=(10, 6)):
+    """
+    Plot a heatmap of word frequencies across high-volume groups.
+
+    Pivots top_words_df so rows are words and columns are groups.
+    Optionally normalizes each column by its total count so that groups
+    of different sizes are comparable.
+
+    Parameters
+    ----------
+    top_words_df : pd.DataFrame
+        DataFrame with columns [group_col, "WORD", "COUNT"].
+    group_col : str
+        Column identifying the group each word belongs to.
+    top_groups : list of str
+        Ordered list of group values to use as heatmap columns.
+    normalize : bool, optional
+        If True, normalize counts within each column to [0, 1].
+        Default is True.
+    figsize : tuple of (float, float), optional
+        Figure dimensions in inches. Default is (10, 6).
+
+    Returns
+    -------
+    pd.DataFrame
+        Pivoted (and optionally normalized) word-frequency DataFrame
+        used to render the heatmap.
+    """
     heatmap_df = (
         top_words_df.pivot_table(
             index="WORD",

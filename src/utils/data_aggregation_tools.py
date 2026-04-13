@@ -2,35 +2,35 @@ import pandas as pd
 import numpy as np
 
 
-"""
-Merge ticket and asset dataframes on WORK_TASK_ID with data type standardization.
-
-This function performs an inner merge of ticket and asset records on WORK_TASK_ID,
-ensuring numeric and datetime consistency. Duplicate WORK_TASK_IDs in the asset table
-will expand rows in the resulting merged dataframe (one row per asset per ticket).
-
-Parameters
-----------
-df_tickets : pd.DataFrame
-    Ticket records dataframe containing WORK_TASK_ID and datetime columns
-    (BASELINE_START_LTZ, ASSIGNED_DATE_LTZ, ACTUAL_START_LTZ, etc.).
-df_assets : pd.DataFrame
-    Asset records dataframe with one or more rows per WORK_TASK_ID. Duplicate
-    WORK_TASK_IDs will cause row expansion in the merge.
-verbose : bool, default False
-    If True, print diagnostic information including dataframe shapes, unique ID counts,
-    and duplicate asset detection.
-
-Returns
--------
-pd.DataFrame
-    Merged dataframe with standardized data types:
-    - WORK_TASK_ID: nullable integer (Int64)
-    - PLANNED_WORKING_DAYS: nullable integer (Int64)
-    - Date columns: formatted as 'YYYY-MM-DD HH:MM:SS.ffffff' string
-    - Columns from both tables with '_ticket' and '_asset' suffixes where overlapping
-"""
 def merge_tickets_assets(df_tickets, df_assets, verbose=False):
+    """
+    Merge ticket and asset dataframes on WORK_TASK_ID with data type standardization.
+
+    This function performs an inner merge of ticket and asset records on WORK_TASK_ID,
+    ensuring numeric and datetime consistency. Duplicate WORK_TASK_IDs in the asset table
+    will expand rows in the resulting merged dataframe (one row per asset per ticket).
+
+    Parameters
+    ----------
+    df_tickets : pd.DataFrame
+        Ticket records dataframe containing WORK_TASK_ID and datetime columns
+        (BASELINE_START_LTZ, ASSIGNED_DATE_LTZ, ACTUAL_START_LTZ, etc.).
+    df_assets : pd.DataFrame
+        Asset records dataframe with one or more rows per WORK_TASK_ID. Duplicate
+        WORK_TASK_IDs will cause row expansion in the merge.
+    verbose : bool, default False
+        If True, print diagnostic information including dataframe shapes, unique ID counts,
+        and duplicate asset detection.
+
+    Returns
+    -------
+    pd.DataFrame
+        Merged dataframe with standardized data types:
+        - WORK_TASK_ID: nullable integer (Int64)
+        - PLANNED_WORKING_DAYS: nullable integer (Int64)
+        - Date columns: formatted as 'YYYY-MM-DD HH:MM:SS.ffffff' string
+        - Columns from both tables with '_ticket' and '_asset' suffixes where overlapping
+    """
     # Convert WORK_TASK_ID to integers
     df_tickets['WORK_TASK_ID'] = pd.to_numeric(df_tickets['WORK_TASK_ID'], errors='coerce')
     df_assets['WORK_TASK_ID'] = pd.to_numeric(df_assets['WORK_TASK_ID'], errors='coerce')
@@ -84,35 +84,34 @@ def merge_tickets_assets(df_tickets, df_assets, verbose=False):
 
 
 
-
-"""
-Aggregate survey responses by work task with consolidated comments.
-
-This function groups survey records by WORK_TASK_ID and aggregates multiple
-survey entries into a single row per task. Multiple response comments are
-concatenated into a single string. All other survey-level columns are 
-retained from the first occurrence within each group.
-
-Parameters
-----------
-df_surveys : pd.DataFrame
-    Survey records dataframe with columns: WORK_TASK_ID, SURVEY_SCORES,
-    WORK_TASK_NAME, WORK_TASK_STATUS, RESPONSIBLE_ORGANIZATION,
-    RESPONSIBLE_PERSON, SERVICE_REQUEST_ID, SURVEY_SENT_DATE,
-    SURVEY_COMMENTS, SURVEY_RESPONSE, RESPONSE_COMMENTS,
-    SURVEY_QUESTION_DESC, BUILDING, FLOOR, REQUEST_CLASS.
-verbose : bool, default False
-    If True, print dataframe shape and first 5 rows of aggregated result.
-
-Returns
--------
-pd.DataFrame
-    Aggregated surveys with one row per WORK_TASK_ID containing:
-    - AVERAGE_SURVEY_SCORE: mean of SURVEY_SCORES per task
-    - RESPONSE_COMMENTS: unique comments joined by '. ' separator
-    - All other columns: first occurrence per task group
-"""  
 def aggregate_surveys(df_surveys, verbose=False):
+    """
+    Aggregate survey responses by work task with consolidated comments.
+
+    This function groups survey records by WORK_TASK_ID and aggregates multiple
+    survey entries into a single row per task. Multiple response comments are
+    concatenated into a single string. All other survey-level columns are 
+    retained from the first occurrence within each group.
+
+    Parameters
+    ----------
+    df_surveys : pd.DataFrame
+        Survey records dataframe with columns: WORK_TASK_ID, SURVEY_SCORES,
+        WORK_TASK_NAME, WORK_TASK_STATUS, RESPONSIBLE_ORGANIZATION,
+        RESPONSIBLE_PERSON, SERVICE_REQUEST_ID, SURVEY_SENT_DATE,
+        SURVEY_COMMENTS, SURVEY_RESPONSE, RESPONSE_COMMENTS,
+        SURVEY_QUESTION_DESC, BUILDING, FLOOR, REQUEST_CLASS.
+    verbose : bool, default False
+        If True, print dataframe shape and first 5 rows of aggregated result.
+
+    Returns
+    -------
+    pd.DataFrame
+        Aggregated surveys with one row per WORK_TASK_ID containing:
+        - AVERAGE_SURVEY_SCORE: mean of SURVEY_SCORES per task
+        - RESPONSE_COMMENTS: unique comments joined by '. ' separator
+        - All other columns: first occurrence per task group
+    """  
     # ----------------------------------------------------------------
     # If the surveys csv ever gets corrupted, redownload V_OM_WORK_TASK_SURVEYS.csv 
     # from the box and run the code below.
@@ -121,6 +120,7 @@ def aggregate_surveys(df_surveys, verbose=False):
     # Define aggregation dictionary
     # Drop SURVEY_QUESTION_ID, SURVEY_QUESTION, SURVEY_TYPE, SURVEY_STATUS
     # Aggregate RESPONSE_COMMENTS into a single column
+
     aggregation_rules = {
         'AVERAGE_SURVEY_SCORE': ('SURVEY_SCORES', 'mean'), # Renamed key to match output column name directly
         'WORK_TASK_NAME': ('WORK_TASK_NAME', 'first'),
@@ -151,33 +151,34 @@ def aggregate_surveys(df_surveys, verbose=False):
 
     return df_surveys_agg
 
-"""
-Merge ticket-asset data with aggregated survey responses by work task ID.
 
-This function performs an inner join of the pre-merged ticket-asset dataframe
-with aggregated survey records on WORK_TASK_ID. The BASELINE_START_LTZ column
-is coerced to datetime format for downstream time-based analysis.
-
-Parameters
-----------
-df_tickets_assets : pd.DataFrame
-    Pre-merged dataframe containing ticket and asset information with
-    WORK_TASK_ID column (output from merge_tickets_assets).
-df_surveys_agg : pd.DataFrame
-    Aggregated survey dataframe grouped by WORK_TASK_ID (output from
-    aggregate_surveys).
-verbose : bool, default False
-    If True, print shape information at various stages of processing
-    and column list of final output.
-
-Returns
--------
-pd.DataFrame
-    Inner joined dataframe containing all columns from both inputs.
-    BASELINE_START_LTZ is converted to datetime64 format.
-    
-"""
 def merge_tickets_assets_surveys(df_tickets_assets, df_surveys_agg, verbose=False):
+    """
+    Merge ticket-asset data with aggregated survey responses by work task ID.
+
+    This function performs an inner join of the pre-merged ticket-asset dataframe
+    with aggregated survey records on WORK_TASK_ID. The BASELINE_START_LTZ column
+    is coerced to datetime format for downstream time-based analysis.
+
+    Parameters
+    ----------
+    df_tickets_assets : pd.DataFrame
+        Pre-merged dataframe containing ticket and asset information with
+        WORK_TASK_ID column (output from merge_tickets_assets).
+    df_surveys_agg : pd.DataFrame
+        Aggregated survey dataframe grouped by WORK_TASK_ID (output from
+        aggregate_surveys).
+    verbose : bool, default False
+        If True, print shape information at various stages of processing
+        and column list of final output.
+
+    Returns
+    -------
+    pd.DataFrame
+        Inner joined dataframe containing all columns from both inputs.
+        BASELINE_START_LTZ is converted to datetime64 format.
+        
+    """
 
     # Merge the dataframes
     df_tickets_assets_surveys = pd.merge(df_tickets_assets, df_surveys_agg, on='WORK_TASK_ID', how='inner')
@@ -205,30 +206,32 @@ def merge_tickets_assets_surveys(df_tickets_assets, df_surveys_agg, verbose=Fals
 
     return df_tickets_assets_surveys
 
-"""
-Convert specified date/time columns to datetime64 format.
 
-This function coerces a fixed list of date/time columns to pandas datetime64
-format, replacing unparseable values with NaT (Not a Time). Use this before
-temporal analysis or when date columns are stored as strings.
-
-Parameters
-----------
-df : pd.DataFrame
-    Input dataframe with date/time columns to convert. Must contain all
-    expected date columns or a ValueError is raised.
-
-Returns
--------
-pd.DataFrame
-    Modified dataframe with date columns converted to datetime64[ns] type.
-
-Raises
-------
-ValueError
-    If any of the expected date columns are missing from the dataframe.
-"""
 def convert_cols_to_datetime(df):
+    """
+    Convert specified date/time columns to datetime64 format.
+
+    This function coerces a fixed list of date/time columns to pandas datetime64
+    format, replacing unparseable values with NaT (Not a Time). Use this before
+    temporal analysis or when date columns are stored as strings.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe with date/time columns to convert. Must contain all
+        expected date columns or a ValueError is raised.
+
+    Returns
+    -------
+    pd.DataFrame
+        Modified dataframe with date columns converted to datetime64[ns] type.
+
+    Raises
+    ------
+    ValueError
+        If any of the expected date columns are missing from the dataframe.
+    """
+
     # Columns to convert
     date_columns = [
         'BASELINE_START_LTZ', 'BASELINE_END_LTZ', 'ASSIGNED_DATE_LTZ',
@@ -246,25 +249,25 @@ def convert_cols_to_datetime(df):
     return df
 
 
-
-"""
-Merges df_tickets with df_locations using an inner join.
-
-Parameters:
------------
-df_tickets : pd.DataFrame
-    DataFrame containing ticket data with a 'BUILDING' column
-df_locations : pd.DataFrame
-    DataFrame containing location data with a 'FEP_BUILDING_DESC' column
-verbose : bool, optional
-    If True, prints information about the merge
-    
-Returns:
---------
-pd.DataFrame
-    Inner joined DataFrame with all columns from both dataframes
-"""
 def merge_tickets_locations(df_tickets, df_locations, verbose=False):
+    """
+    Merges df_tickets with df_locations using an inner join.
+
+    Parameters:
+    -----------
+    df_tickets : pd.DataFrame
+        DataFrame containing ticket data with a 'BUILDING' column
+    df_locations : pd.DataFrame
+        DataFrame containing location data with a 'FEP_BUILDING_DESC' column
+    verbose : bool, optional
+        If True, prints information about the merge
+        
+    Returns:
+    --------
+    pd.DataFrame
+        Inner joined DataFrame with all columns from both dataframes
+    """
+    
     merged_df = pd.merge(
         df_tickets,
         df_locations,
