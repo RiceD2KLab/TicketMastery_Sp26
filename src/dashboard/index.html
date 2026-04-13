@@ -19,12 +19,16 @@
         <p>CSV-driven frontend prototype for maintenance ticket analysis.</p>
         <div class="controls">
           <label class="file-input">
-            <span>Load merged_tickets_assets.csv</span>
+            <span>Tickets CSV</span>
+            <input id="ticketsCsvInput" type="file" accept=".csv" />
+          </label>
+          <label class="file-input">
+            <span>Assets CSV</span>
             <input id="assetsCsvInput" type="file" accept=".csv" />
           </label>
           <label class="file-input">
-            <span>Load merged_tickets_assets_surveys.csv (optional)</span>
-            <input id="surveysCsvInput" type="file" accept=".csv" />
+            <span>Space CSV</span>
+            <input id="spaceCsvInput" type="file" accept=".csv" />
           </label>
           <label class="compact-control">
             X-day window
@@ -32,22 +36,28 @@
           </label>
           <button id="refreshBtn" type="button">Refresh Panels</button>
         </div>
-        <p class="note">Expected core columns: <code>WORK_TASK_ID</code>, <code>DESCRIPTION</code>, <code>TASK_TYPE</code>, <code>ASSET_ID</code>, <code>ASSET_PRIMARY_LOCATION_BUILDING</code>, <code>CREATE_DATE_LTZ</code>. Optional survey columns: <code>average_survey_score</code>, <code>building</code>, <code>BASELINE_START_LTZ</code>.</p>
-      </header>
 
-      <section class="grid">
+        <p class="note">
+          Required source files:
+          <code>V_OM_WORK_TASK.csv</code>,
+          <code>V_OM_WORK_TASK_ASSET.csv</code>,
+          <code>V_SPACE_DETAIL.csv</code>.
+        </p>
+      <section class="flex-stack">
         <article class="panel" id="panel1">
-          <h2>1) Repetitive Assets in X-day Period</h2>
+          <h2>1) Repetitive Tickets in X-day Period</h2>
           <div id="repetitiveSummary" class="summary"></div>
-          <div class="table-wrap">
+          <div class="table-wrap ticket-results-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Asset ID</th>
-                  <th>Repetitive Tasks</th>
-                  <th>Avg Survey</th>
-                  <th>Class Tags</th>
-                  <th>Buildings</th>
+                  <th>Ticket ID</th>
+                  <th>Building</th>
+                  <th>Object</th>
+                  <th>Task Type</th>
+                  <th>Created</th>
+                  <th>Repetitive</th>
+                  <th>Description</th>
                 </tr>
               </thead>
               <tbody id="repetitiveTable"></tbody>
@@ -58,7 +68,7 @@
         <article class="panel" id="panel2">
           <h2>2) Corrective Ticket Heat Map by Building</h2>
           <div id="heatmapLegend" class="summary"></div>
-          <div id="heatmap" class="heatmap"></div>
+          <iframe id="mapFrame" class="map-frame" title="Ticket Map"></iframe>
         </article>
 
         <article class="panel" id="panel3">
@@ -81,20 +91,6 @@
 
         <article class="panel" id="panel4">
           <h2>4) Keyword Search + Word Cloud</h2>
-          <div class="inline-controls">
-            <label class="file-input">
-              <span>Tickets CSV</span>
-              <input id="wcTicketsCsvInput" type="file" accept=".csv" />
-            </label>
-            <label class="file-input">
-              <span>Assets CSV</span>
-              <input id="wcAssetsCsvInput" type="file" accept=".csv" />
-            </label>
-            <label class="file-input">
-              <span>Space CSV</span>
-              <input id="wcSpaceCsvInput" type="file" accept=".csv" />
-            </label>
-          </div>
           <div class="inline-controls">
             <select id="wcGroupCol">
               <option value="">(overall)</option>
