@@ -97,12 +97,15 @@ button {
 }
 
 .flex-stack {
-  margin-top: 10rem;
+  margin-top: 1rem;
   display: flex;
   flex-direction: column; 
-  gap: 7.5rem;  
+  gap: 1.5rem;  
 }
 
+.table-pagination {
+   padding: 0.85rem;
+}
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);

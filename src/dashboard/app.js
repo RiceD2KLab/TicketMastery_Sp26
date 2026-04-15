@@ -4,14 +4,26 @@ const state = {
   keyword: "",
   rawAssetsRows: [],
   rawSurveyRows: [],
-  panel1Rows: [],
-  panel4Rows: [],
   wordCloudIntersection: false,
   files: {
     tickets: null, // V_OM_WORK_TASK.csv
     assets: null,  // V_OM_WORK_TASK_ASSET.csv
     space: null,   // V_SPACE_DETAIL.csv
 }
+};
+
+state.panel1 = {
+  rows: [],
+  page: 1,
+  pageSize: 100,
+};
+
+state.panel4 = {
+  rows: [],
+  filteredRows: [],
+  page: 1,
+  pageSize: 100,
+  wordFreq: null,
 };
 
 const stopWords = new Set([
@@ -288,6 +300,15 @@ function normalizeApiTicketRows(rows) {
   }));
 }
 
+function paginate(rows, page, pageSize) {
+  const start = (page - 1) * pageSize;
+  return rows.slice(start, start + pageSize);
+}
+
+function getTotalPages(rows, pageSize) {
+  return Math.max(1, Math.ceil(rows.length / pageSize));
+}
+
 function mergeRawRowsByTicketId(assetRows, surveyRows) {
   const merged = new Map();
 
@@ -407,7 +428,8 @@ async function loadPanel1FromApi() {
     summary.textContent = "Loading repetitive tickets...";
     const data = await fetchRepetitiveObjectsFromApi();
 
-    state.panel1Rows = normalizeRepetitiveApiRows(data.ticket_rows || []);
+    state.panel1.rows = normalizeRepetitiveApiRows(data.ticket_rows || []);
+    state.panel1.page = 1;
 
     const info = data.summary || {};
     summary.textContent =
@@ -464,9 +486,21 @@ async function fetchWordCloudFromApi() {
 
 function renderPanel1() {
   const tbody = $("repetitiveTable");
-  tbody.innerHTML = "";
+  const pageInfo = $("panel1PageInfo");
+  const prevBtn = $("panel1PrevBtn");
+  const nextBtn = $("panel1NextBtn");
 
-  state.panel1Rows.forEach((r) => {
+  const rows = state.panel1.rows;
+  const page = state.panel1.page;
+  const pageSize = state.panel1.pageSize;
+
+  const totalPages = getTotalPages(rows, pageSize);
+  const pageRows = paginate(rows, page, pageSize);
+
+  tbody.innerHTML = "";
+  const fragment = document.createDocumentFragment();
+
+  pageRows.forEach((r) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${r.ticket_id || "N/A"}</td>
@@ -475,10 +509,16 @@ function renderPanel1() {
       <td>${r.ticket_type || "N/A"}</td>
       <td>${r.created_at || "N/A"}</td>
       <td>${r.repetitive}</td>
-      <td>${cleanDescription(r.description)}</td>
+      <td>${r.cleaned_description || ""}</td>
     `;
-    tbody.appendChild(tr);
+    fragment.appendChild(tr);
   });
+
+  tbody.appendChild(fragment);
+
+  if (pageInfo) pageInfo.textContent = `Page ${page} of ${totalPages}`;
+  if (prevBtn) prevBtn.disabled = page <= 1;
+  if (nextBtn) nextBtn.disabled = page >= totalPages;
 }
 
 async function renderPanel2() {
@@ -812,6 +852,21 @@ function setupEvents() {
   $("wcIntersectionToggle").addEventListener("change", (e) => {
     state.wordCloudIntersection = e.target.checked;
     renderPanel4();
+  });
+
+  $("panel1PrevBtn").addEventListener("click", () => {
+    if (state.panel1.page > 1) {
+      state.panel1.page -= 1;
+      renderPanel1();
+    }
+  });
+
+$("panel1NextBtn").addEventListener("click", () => {
+    const totalPages = getTotalPages(state.panel1.rows, state.panel1.pageSize);
+    if (state.panel1.page < totalPages) {
+      state.panel1.page += 1;
+      renderPanel1();
+    }
   });
 }
 
