@@ -6,4 +6,14 @@ data/V_OM_WORK_TASK.csv
 data/V_SPACE_BUILDING_DETAIL.csv
 !data/.gitkeep
 src/todo.md
+todo.txt
 *.csv
+
+objects_old.ipynb
+repetitive_task_detector.py
+repetitive_task_explorer.jsx
+USAGE_GUIDE.md
+data/
+data-exploration/
+.DS_Store
+**/.DS_Store

@@ -4,8 +4,26 @@ const state = {
   keyword: "",
   rawAssetsRows: [],
   rawSurveyRows: [],
-  panel4Rows: [],
   wordCloudIntersection: false,
+  files: {
+    tickets: null, // V_OM_WORK_TASK.csv
+    assets: null,  // V_OM_WORK_TASK_ASSET.csv
+    space: null,   // V_SPACE_DETAIL.csv
+}
+};
+
+state.panel1 = {
+  rows: [],
+  page: 1,
+  pageSize: 100,
+};
+
+state.panel4 = {
+  rows: [],
+  filteredRows: [],
+  page: 1,
+  pageSize: 100,
+  wordFreq: null,
 };
 
 const stopWords = new Set([
@@ -261,6 +279,18 @@ function normalizeRows(rawRows) {
   });
 }
 
+function normalizeRepetitiveApiRows(rows) {
+  return rows.map((r) => ({
+    ticket_id: r.WORK_TASK_ID || "",
+    building: r.BUILDING || "Unknown",
+    object_id: r.OBJECT_ID || "",
+    ticket_type: r.TASK_TYPE || "",
+    created_at: r.CREATE_DATE_LTZ || "",
+    repetitive: Number(r.REPETITIVE || 0),
+    description: r.DESCRIPTION || "",
+  }));
+}
+
 function normalizeApiTicketRows(rows) {
   return rows.map((r) => ({
     ticket_id: r.WORK_TASK_ID || "",
@@ -268,6 +298,15 @@ function normalizeApiTicketRows(rows) {
     description: r.DESCRIPTION || "",
     group_value: r.GROUP_VALUE || "",
   }));
+}
+
+function paginate(rows, page, pageSize) {
+  const start = (page - 1) * pageSize;
+  return rows.slice(start, start + pageSize);
+}
+
+function getTotalPages(rows, pageSize) {
+  return Math.max(1, Math.ceil(rows.length / pageSize));
 }
 
 function mergeRawRowsByTicketId(assetRows, surveyRows) {
@@ -350,10 +389,66 @@ function repetitiveTasksWithinWindow(rows, windowDays) {
   return repeatedTasks;
 }
 
+async function fetchRepetitiveObjectsFromApi() {
+  const ticketsFile = state.files.tickets;
+  const assetsFile = state.files.assets;
+  const spaceFile = state.files.space;
+
+  if (!ticketsFile || !assetsFile || !spaceFile) {
+    throw new Error("Upload Tickets, Assets, and Space CSVs in the global controls first.");
+  }
+
+  const fd = new FormData();
+  fd.append("tickets_csv", ticketsFile);
+  fd.append("assets_csv", assetsFile);
+  fd.append("space_csv", spaceFile);
+  fd.append("num_days", String(state.days));
+  fd.append("min_days", "3");
+  fd.append("repetitive_only", "true");
+  fd.append("drop_missing_space", "true");
+  fd.append("corrective_only", "true");
+
+  const resp = await fetch("http://localhost:8000/repetitive-objects", {
+    method: "POST",
+    body: fd,
+  });
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`API ${resp.status}: ${txt}`);
+  }
+
+  return await resp.json();
+}
+
+async function loadPanel1FromApi() {
+  const summary = $("repetitiveSummary");
+
+  try {
+    summary.textContent = "Loading repetitive tickets...";
+    const data = await fetchRepetitiveObjectsFromApi();
+
+    state.panel1.rows = normalizeRepetitiveApiRows(data.ticket_rows || []);
+    state.panel1.page = 1;
+
+    const info = data.summary || {};
+    summary.textContent =
+      `Found ${info.repetitive_rows ?? state.panel1Rows.length} repetitive rows ` +
+      `out of ${info.total_rows ?? 0} total rows within ${info.num_days ?? state.days} days.`;
+
+    renderPanel1();
+  } catch (e) {
+    console.error(e);
+    state.panel1Rows = [];
+    summary.textContent = `Repetitive objects API failed: ${e.message}`;
+    renderPanel1();
+  }
+}
+
 async function fetchWordCloudFromApi() {
-  const ticketsFile = $("wcTicketsCsvInput").files?.[0];
-  const assetsFile = $("wcAssetsCsvInput").files?.[0];
-  const spaceFile = $("wcSpaceCsvInput").files?.[0];
+  const ticketsFile = state.files.tickets;
+  const assetsFile = state.files.assets;
+  const spaceFile = state.files.space;
 
   if (!ticketsFile || !assetsFile || !spaceFile) {
     throw new Error("Upload Tickets, Assets, and Space CSVs for the word cloud.");
@@ -387,92 +482,65 @@ async function fetchWordCloudFromApi() {
   };
 }
 
+
+
 function renderPanel1() {
   const tbody = $("repetitiveTable");
-  const summary = $("repetitiveSummary");
+  const pageInfo = $("panel1PageInfo");
+  const prevBtn = $("panel1PrevBtn");
+  const nextBtn = $("panel1NextBtn");
+
+  const rows = state.panel1.rows;
+  const page = state.panel1.page;
+  const pageSize = state.panel1.pageSize;
+
+  const totalPages = getTotalPages(rows, pageSize);
+  const pageRows = paginate(rows, page, pageSize);
+
   tbody.innerHTML = "";
+  const fragment = document.createDocumentFragment();
 
-  const repeatedTasks = repetitiveTasksWithinWindow(state.rows, state.days);
-
-  const byAsset = new Map();
-  repeatedTasks.forEach((r) => {
-    if (!byAsset.has(r.asset_id)) byAsset.set(r.asset_id, []);
-    byAsset.get(r.asset_id).push(r);
-  });
-
-  const repetitiveAssets = [...byAsset.entries()]
-    .map(([assetId, tasks]) => {
-      const surveyCount = tasks.filter((t) => t.survey_score > 0).length;
-      const surveyAvg = surveyCount
-        ? tasks.reduce((sum, t) => sum + t.survey_score, 0) / surveyCount
-        : 0;
-
-      const classTags = [...new Set(tasks.flatMap((t) => [t.request_class, t.service_class]).filter(Boolean))].join(", ");
-      const buildings = [...new Set(tasks.map((t) => t.building || "Unknown"))].join(", ");
-
-      return {
-        assetId,
-        count: tasks.length,
-        surveyAvg,
-        classTags: classTags || "n/a",
-        buildings,
-      };
-    })
-    .sort((a, b) => b.count - a.count);
-
-  summary.textContent = `Found ${repeatedTasks.length} repetitive tasks across ${repetitiveAssets.length} assets within ${state.days} days.`;
-
-  repetitiveAssets.slice(0, 50).forEach((r) => {
+  pageRows.forEach((r) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.assetId}</td><td>${r.count}</td><td>${r.surveyAvg ? r.surveyAvg.toFixed(2) : "n/a"}</td><td>${r.classTags}</td><td>${r.buildings}</td>`;
-    tbody.appendChild(tr);
+    tr.innerHTML = `
+      <td>${r.ticket_id || "N/A"}</td>
+      <td>${r.building || "N/A"}</td>
+      <td>${r.object_id || "N/A"}</td>
+      <td>${r.ticket_type || "N/A"}</td>
+      <td>${r.created_at || "N/A"}</td>
+      <td>${r.repetitive}</td>
+      <td>${r.cleaned_description || ""}</td>
+    `;
+    fragment.appendChild(tr);
   });
+
+  tbody.appendChild(fragment);
+
+  if (pageInfo) pageInfo.textContent = `Page ${page} of ${totalPages}`;
+  if (prevBtn) prevBtn.disabled = page <= 1;
+  if (nextBtn) nextBtn.disabled = page >= totalPages;
 }
 
-function renderPanel2() {
-  const container = $("heatmap");
+async function renderPanel2() {
   const legend = $("heatmapLegend");
-  container.innerHTML = "";
+  const frame = $("mapFrame");
 
-  const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const corrective = state.rows.filter((r) => (r.ticket_type || "").toLowerCase().includes("correct"));
-  const buildings = [...new Set(corrective.map((r) => r.building || "Unknown"))].sort();
-  const counts = new Map();
-  let maxVal = 0;
+  try {
+    legend.textContent = "Loading map...";
+    const resp = await fetch("http://localhost:8000/map-html");
 
-  buildings.forEach((b) => {
-    counts.set(b, new Array(7).fill(0));
-  });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      throw new Error(`API ${resp.status}: ${txt}`);
+    }
 
-  corrective.forEach((r) => {
-    const b = r.building || "Unknown";
-    const day = r.event_date ? r.event_date.getDay() : 0;
-    const row = counts.get(b) || new Array(7).fill(0);
-    row[day] += 1;
-    counts.set(b, row);
-    maxVal = Math.max(maxVal, row[day]);
-  });
-
-  const head = document.createElement("div");
-  head.className = "heatmap-row";
-  head.innerHTML = `<div class="hm-head">Building</div>${dow.map((d) => `<div class="hm-head">${d}</div>`).join("")}`;
-  container.appendChild(head);
-
-  buildings.forEach((b) => {
-    const row = counts.get(b);
-    const div = document.createElement("div");
-    div.className = "heatmap-row";
-    const cells = row
-      .map((v) => {
-        const alpha = maxVal ? 0.12 + v / maxVal : 0;
-        return `<div class="hm-cell" style="background-color: rgba(231, 111, 81, ${alpha});">${v}</div>`;
-      })
-      .join("");
-    div.innerHTML = `<div class="hm-label">${b}</div>${cells}`;
-    container.appendChild(div);
-  });
-
-  legend.textContent = `Heat intensity scaled to max ${maxVal || 0} corrective tickets in any building/day bucket.`;
+    const html = await resp.text();
+    frame.srcdoc = html;
+    legend.textContent = "Interactive map loaded.";
+  } catch (e) {
+    console.error(e);
+    legend.textContent = `Map failed: ${e.message}`;
+  }
 }
 
 function renderBars(targetId, items, color = "var(--accent)") {
@@ -712,12 +780,15 @@ async function loadFileToRawRows(file, target) {
 }
 
 function setupEvents() {
-  $("xDaysInput").addEventListener("change", (e) => {
+  $("xDaysInput").addEventListener("change", async (e) => {
     state.days = Number(e.target.value || 90);
-    renderPanel1();
+    await loadPanel1FromApi();
   });
 
-  $("refreshBtn").addEventListener("click", () => render());
+  $("refreshBtn").addEventListener("click", async () => {
+    render();
+    await loadPanel1FromApi();
+  });
 
   $("keywordBtn").addEventListener("click", () => {
     state.keyword = $("keywordInput").value;
@@ -730,23 +801,29 @@ function setupEvents() {
       renderPanel4();
     }
   });
-
-  $("assetsCsvInput").addEventListener("change", async (e) => {
+  
+  $("ticketsCsvInput").addEventListener("change", (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    await loadFileToRawRows(file, "rawAssetsRows");
+    state.files.tickets = file;
   });
 
-  $("surveysCsvInput").addEventListener("change", async (e) => {
+  $("assetsCsvInput").addEventListener("change", (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    await loadFileToRawRows(file, "rawSurveyRows");
+    state.files.assets = file;
+  });
+
+  $("spaceCsvInput").addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    state.files.space = file;
   });
 
   $("wcRunBtn").addEventListener("click", async () => {
     const summary = $("keywordSummary");
     try {
-      summary.textContent = "Computing word cloud via API...";
+      summary.textContent = "Computing word cloud...";
       const apiData = await fetchWordCloudFromApi();
 
       state.panel4Rows = normalizeApiTicketRows(apiData.ticketRows);
@@ -775,6 +852,21 @@ function setupEvents() {
   $("wcIntersectionToggle").addEventListener("change", (e) => {
     state.wordCloudIntersection = e.target.checked;
     renderPanel4();
+  });
+
+  $("panel1PrevBtn").addEventListener("click", () => {
+    if (state.panel1.page > 1) {
+      state.panel1.page -= 1;
+      renderPanel1();
+    }
+  });
+
+$("panel1NextBtn").addEventListener("click", () => {
+    const totalPages = getTotalPages(state.panel1.rows, state.panel1.pageSize);
+    if (state.panel1.page < totalPages) {
+      state.panel1.page += 1;
+      renderPanel1();
+    }
   });
 }
 
