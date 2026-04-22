@@ -1,5 +1,5 @@
 import pandas as pd
-from dashboard.WordCloud import WordCloud
+from utils import WordCloudHelpers
 
 def process_data(assets, tickets, spaces):
     """
@@ -31,7 +31,7 @@ def process_data(assets, tickets, spaces):
 
     # Tokenizing Description for Word Cloud 
     merged_df = merged_df.dropna(subset=['DESCRIPTION'])
-    merged_df['TOKENS'] = merged_df['DESCRIPTION'].apply(WordCloud.clean_and_tokenize)
+    merged_df['TOKENS'] = merged_df['DESCRIPTION'].apply(WordCloudHelpers.clean_and_tokenize)
 
 
     selected_columns = [
