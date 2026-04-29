@@ -1,22 +1,35 @@
 import pandas as pd
-from dashboard.WordCloud import WordCloud
+from utils import WordCloudHelpers
 
-def process_data(assets, tickets, spaces):
+
+def _normalize_work_task_id(df):
+    df = df.copy()
+    if "WORK_TASK_ID" in df.columns:
+        df["WORK_TASK_ID"] = (
+            df["WORK_TASK_ID"]
+            .astype("string")
+            .str.strip()
+            .str.replace(r"\.0$", "", regex=True)
+        )
+    return df
+
+
+def process_dfs(tickets_df, assets_df, spaces_df):
     """
-    Load asset, ticket, and space CSV data and return a merged DataFrame with
+    Merge asset, ticket, and space dfs and return a DataFrame with
     selected analysis fields and tokenized ticket descriptions.
 
     Args:
-        assets: Path to the assets CSV file.
-        tickets: Path to the tickets CSV file.
-        spaces: Path to the spaces CSV file.
+        tickets_df: Ticket records dataframe.
+        assets_df: Asset records dataframe.
+        spaces_df: Space records dataframe.
 
     Returns:
         pd.DataFrame: Merged and cleaned dataset with selected columns for analysis.
     """
-    df_assets = pd.read_csv(assets)
-    df_tickets = pd.read_csv(tickets)
-    df_space = pd.read_csv(spaces)
+    df_assets = _normalize_work_task_id(assets_df)
+    df_tickets = _normalize_work_task_id(tickets_df)
+    df_space = spaces_df.copy()
 
     df_assets = df_assets.drop_duplicates(subset="WORK_TASK_ID", keep="first")
     merged_df = pd.merge(df_tickets, df_assets, on='WORK_TASK_ID', how='left')
@@ -31,7 +44,7 @@ def process_data(assets, tickets, spaces):
 
     # Tokenizing Description for Word Cloud 
     merged_df = merged_df.dropna(subset=['DESCRIPTION'])
-    merged_df['TOKENS'] = merged_df['DESCRIPTION'].apply(WordCloud.clean_and_tokenize)
+    merged_df['TOKENS'] = merged_df['DESCRIPTION'].apply(WordCloudHelpers.clean_and_tokenize)
 
 
     selected_columns = [
@@ -60,3 +73,23 @@ def process_data(assets, tickets, spaces):
         'TOKENS'
     ]
     return merged_df[selected_columns].copy()
+
+
+def process_data(assets, tickets, spaces):
+    """
+    Load asset, ticket, and space CSV data and return a merged DataFrame with
+    selected analysis fields and tokenized ticket descriptions.
+
+    Args:
+        assets: Path to the assets CSV file.
+        tickets: Path to the tickets CSV file.
+        spaces: Path to the spaces CSV file.
+
+    Returns:
+        pd.DataFrame: Merged and cleaned dataset with selected columns for analysis.
+    """
+    return process_dfs(
+        tickets_df=pd.read_csv(tickets),
+        assets_df=pd.read_csv(assets),
+        spaces_df=pd.read_csv(spaces),
+    )

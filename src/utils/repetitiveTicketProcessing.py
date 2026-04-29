@@ -1,14 +1,14 @@
-"""Utilities for labeling repetitive maintenance tasks from source CSV files.
+"""Utilities for labeling repetitive maintenance tasks from source data.
 
 This module follows the object-based approach used in repetitive_objects.ipynb:
-- build the merged tickets/assets dataframe from source CSVs
+- build the merged tickets/assets dataframe from source data
 - convert date columns to datetimes
 - restrict repetition detection to corrective tasks
 - default to grouping_4: SERVICE_CLASS + BUILDING + FLOOR + SPACE
 - flag a task as repetitive when a later task for the same object occurs within
   the chosen time window
 
-The main entry point is `build_repetitive_labels_from_csvs`, which returns the
+The main entry point is `build_repetitive_labels`, which returns the
 full merged dataframe with a REPETITIVE column (1/0).
 """
 
@@ -162,7 +162,6 @@ def label_repetitive_objects(
     return df
 
 
-
 def build_repetitive_labels_from_csvs(
     tickets_csv_path: str | Path,
     assets_csv_path: str | Path,
@@ -188,7 +187,40 @@ def build_repetitive_labels_from_csvs(
     df_tickets = pd.read_csv(tickets_csv_path)
     df_assets = pd.read_csv(assets_csv_path)
 
-    df_tickets_assets = merge_tickets_assets(df_tickets=df_tickets, df_assets=df_assets)
+    return build_repetitive_labels_from_dfs(
+        tickets_df=df_tickets,
+        assets_df=df_assets,
+        space_df=None,
+        group_cols=group_cols,
+        num_days=num_days,
+        min_days=min_days,
+        drop_missing_space=drop_missing_space,
+        corrective_only=corrective_only,
+    )
+
+
+def build_repetitive_labels_from_dfs(
+    tickets_df: pd.DataFrame,
+    assets_df: pd.DataFrame,
+    space_df: pd.DataFrame | None = None,
+    group_cols: Sequence[str] | None = None,
+    num_days: int = 90,
+    min_days: int = 3,
+    drop_missing_space: bool = True,
+    corrective_only: bool = True,
+) -> pd.DataFrame:
+    """Build merged tickets/assets data from dfs and label repetition.
+
+    The optional ``space_df`` argument is accepted for parity with dashboard
+    inputs. It is not used by the current notebook-derived repetitive-object
+    logic.
+    """
+    del space_df
+
+    df_tickets_assets = merge_tickets_assets(
+        df_tickets=tickets_df.copy(),
+        df_assets=assets_df.copy(),
+    )
     df_tickets_assets = convert_cols_to_datetime(df_tickets_assets)
 
     labeled_df = label_repetitive_objects(
