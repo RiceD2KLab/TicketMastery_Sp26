@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 import re
 import sys
-import tempfile
-from contextlib import contextmanager
 from pathlib import Path
 
 import altair as alt
@@ -23,6 +21,7 @@ from utils.StopWords import STOP_WORDS
 from utils import repetitiveTicketProcessing as rtp
 from utils import wordCloudProcessing
 from utils import WordCloudHelpers
+from utils import sentiments
 
 st.set_page_config(page_title="Ticketmastery Dashboard", layout="wide")
 
@@ -32,6 +31,12 @@ ALLOWED_GROUP_COLS = [
     "REQUEST_CLASS",
     "RESPONSIBLE_ORGANIZATION_NAME",
 ]
+
+SENTIMENT_TEXT_COLS = {
+    "DESCRIPTION": "Initial Request Description",
+    "RESOLUTION_DESCRIPTION": "Resolution Notes",
+    "RESPONSE_COMMENTS": "Customer Response Comments",
+}
 
 MAP_REQUIRED_COLUMNS = {
     "FEP_BUILDING_X_COORDINATE",
@@ -91,24 +96,6 @@ def load_snowflake_view(view_name: str) -> pd.DataFrame:
     conn = get_conn()
     safe_view = sanitize_identifier(view_name)
     return conn.query(f"SELECT * FROM {safe_view}", ttl=600)
-
-
-@contextmanager
-def temp_csv_triplet(tickets_df: pd.DataFrame, assets_df: pd.DataFrame, space_df: pd.DataFrame):
-    paths: list[str] = []
-    try:
-        for df in (tickets_df, assets_df, space_df):
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
-            df.to_csv(tmp.name, index=False)
-            tmp.close()
-            paths.append(tmp.name)
-        yield paths[0], paths[1], paths[2]
-    finally:
-        for path in paths:
-            try:
-                os.remove(path)
-            except OSError:
-                pass
 
 
 # Utility logic 
@@ -184,21 +171,20 @@ def build_repetitive_panel_data(
     if rtp is None:
         raise RuntimeError(f"Could not import repetitiveTicketProcessing")
 
-    with temp_csv_triplet(tickets_df, assets_df, space_df) as (tickets_path, assets_path, space_path):
-        labeled_df = rtp.build_repetitive_labels_from_csvs(
-            tickets_csv_path=tickets_path,
-            assets_csv_path=assets_path,
-            space_csv_path=space_path,
-            group_cols=["SERVICE_CLASS", "BUILDING", "FLOOR", "SPACE"],
-            num_days=num_days,
-            min_days=min_days,
-            drop_missing_space=drop_missing_space,
-            corrective_only=corrective_only,
-        )
-        rows_df = rtp.build_repetitive_ticket_rows(
-            labeled_df=labeled_df,
-            repetitive_only=repetitive_only,
-        )
+    labeled_df = rtp.build_repetitive_labels_from_dfs(
+        tickets_df=tickets_df,
+        assets_df=assets_df,
+        space_df=space_df,
+        group_cols=["SERVICE_CLASS", "BUILDING", "FLOOR", "SPACE"],
+        num_days=num_days,
+        min_days=min_days,
+        drop_missing_space=drop_missing_space,
+        corrective_only=corrective_only,
+    )
+    rows_df = rtp.build_repetitive_ticket_rows(
+        labeled_df=labeled_df,
+        repetitive_only=repetitive_only,
+    )
 
     summary = {
         "total_rows": int(len(labeled_df)),
@@ -226,8 +212,11 @@ def build_wordcloud_ticket_rows(
 
     selected_values = parse_group_values_input(group_values_text)
 
-    with temp_csv_triplet(tickets_df, assets_df, space_df) as (tickets_path, assets_path, space_path):
-        df = wordCloudProcessing.process_data(tickets_path, assets_path, space_path)
+    df = wordCloudProcessing.process_dfs(
+        tickets_df=tickets_df,
+        assets_df=assets_df,
+        spaces_df=space_df,
+    )
 
     ticket_df = df.copy()
 
@@ -250,6 +239,93 @@ def build_wordcloud_ticket_rows(
     )
     return output
 
+@st.cache_data(show_spinner=False, ttl=600)
+def build_sentiment_ticket_rows(
+    tickets_df: pd.DataFrame,
+    assets_df: pd.DataFrame,
+    space_df: pd.DataFrame,
+    survey_df: pd.DataFrame,
+) -> pd.DataFrame:
+    if sentiments is None:
+        raise RuntimeError("Could not import sentiments")
+
+    df = sentiments.process_dfs(
+        tickets_df=tickets_df,
+        assets_df=assets_df,
+        spaces_df=space_df,
+        survey_df=survey_df,
+    )
+    df = sentiments.produce_sentimenet(df)
+
+    output_cols = [
+        "WORK_TASK_ID",
+        "BUILDING",
+        "SERVICE_CLASS",
+        "REQUEST_CLASS",
+        "DESCRIPTION",
+        "DESCRIPTION_SENTIMENT",
+        "RESOLUTION_DESCRIPTION",
+        "RESOLUTION_DESCRIPTION_SENTIMENT",
+        "RESPONSE_COMMENTS",
+        "RESPONSE_COMMENTS_SENTIMENT",
+    ]
+
+    available_output_cols = [col for col in output_cols if col in df.columns]
+
+    return (
+        df[available_output_cols]
+        .replace({np.inf: np.nan, -np.inf: np.nan})
+        .copy()
+    )
+
+
+def build_sentiment_extremes(
+    df: pd.DataFrame,
+    text_col: str,
+    threshold: float,
+    n_rows: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    sentiment_col = f"{text_col}_SENTIMENT"
+
+    available_cols = [
+        "WORK_TASK_ID",
+        "BUILDING",
+        "SERVICE_CLASS",
+        "REQUEST_CLASS",
+        text_col,
+        sentiment_col,
+    ]
+
+    available_cols = [col for col in available_cols if col in df.columns]
+
+    sentiment_df = (
+        df[available_cols]
+        .dropna(subset=[sentiment_col])
+        .copy()
+    )
+
+    positive_df = (
+        sentiment_df[sentiment_df[sentiment_col] >= threshold]
+        .sort_values(sentiment_col, ascending=False)
+        .head(n_rows)
+    )
+
+    negative_df = (
+        sentiment_df[sentiment_df[sentiment_col] <= -threshold]
+        .sort_values(sentiment_col, ascending=True)
+        .head(n_rows)
+    )
+
+    rename_map = {
+        "WORK_TASK_ID": "Ticket ID",
+        "BUILDING": "Building",
+        "SERVICE_CLASS": "Service Class",
+        "REQUEST_CLASS": "Request Class",
+        text_col: SENTIMENT_TEXT_COLS.get(text_col, text_col),
+        sentiment_col: "Sentiment Score",
+    }
+
+    return positive_df.rename(columns=rename_map), negative_df.rename(columns=rename_map)
 
 def make_download_bytes(df: pd.DataFrame) -> bytes:
     return df.to_csv(index=False).encode("utf-8")
@@ -328,12 +404,21 @@ def load_sources(
     assets_filename: str | None,
     space_filename: str | None,
     map_filename: str | None,
+    survey_filename: str | None,
     tickets_view: str | None,
     assets_view: str | None,
     space_view: str | None,
     map_view: str | None,
-) -> tuple[pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | None, dict[str, str]]:
-    tickets_df = assets_df = space_df = map_df = None
+    survey_view: str | None,
+) -> tuple[
+    pd.DataFrame | None,
+    pd.DataFrame | None,
+    pd.DataFrame | None,
+    pd.DataFrame | None,
+    pd.DataFrame | None,
+    dict[str, str],
+]:
+    tickets_df = assets_df = space_df = map_df = survey_df = None
     resolved_sources: dict[str, str] = {}
 
     if source_mode == "Snowflake views":
@@ -349,11 +434,15 @@ def load_sources(
         if map_view:
             map_df = load_snowflake_view(map_view)
             resolved_sources["map"] = map_view
+        if survey_view:
+            survey_df = load_snowflake_view(survey_view)
+            resolved_sources["survey"] = survey_view
     else:
-        tickets_path = resolve_local_path(data_dir or "data", tickets_filename)
-        assets_path = resolve_local_path(data_dir or "data", assets_filename)
-        space_path = resolve_local_path(data_dir or "data", space_filename)
-        map_path = resolve_local_path(data_dir or "data", map_filename)
+        tickets_path = resolve_local_path(data_dir, tickets_filename)
+        assets_path = resolve_local_path(data_dir, assets_filename)
+        space_path = resolve_local_path(data_dir, space_filename)
+        map_path = resolve_local_path(data_dir, map_filename)
+        survey_path = resolve_local_path(data_dir, survey_filename)
 
         if tickets_path:
             tickets_df = load_local_csv(str(tickets_path))
@@ -367,12 +456,16 @@ def load_sources(
         if map_path:
             map_df = load_local_csv(str(map_path))
             resolved_sources["map"] = str(map_path)
+        if survey_path:
+            survey_df = load_local_csv(str(survey_path))
+            resolved_sources["survey"] = str(survey_path)
+
 
     if map_df is None and tickets_df is not None and MAP_REQUIRED_COLUMNS.issubset(set(tickets_df.columns)):
         map_df = tickets_df.copy()
         resolved_sources["map"] = "tickets source (fallback)"
 
-    return tickets_df, assets_df, space_df, map_df, resolved_sources
+    return tickets_df, assets_df, space_df, map_df, survey_df, resolved_sources
 
 # Sidebar and app shell
 st.title("Ticketmastery Dashboard")
@@ -400,7 +493,8 @@ with st.sidebar:
     assets_filename = "V_OM_WORK_TASK_ASSET.csv"
     space_filename = "V_SPACE_DETAIL.csv"
     map_filename = "TICKETS_WITH_COORDS.csv"
-    tickets_view = assets_view = space_view = map_view = None
+    survey_filename = "V_OM_WORK_TASK_SURVEY.csv"
+    tickets_view = assets_view = space_view = map_view = survey_view = None
 
     if source_mode == "Snowflake views":
         st.subheader("Snowflake objects")
@@ -408,44 +502,35 @@ with st.sidebar:
         tickets_view = st.text_input("Tickets view", value="V_OM_WORK_TASK")
         assets_view = st.text_input("Assets view", value="V_OM_WORK_TASK_ASSET")
         space_view = st.text_input("Space view", value="V_SPACE_DETAIL")
-        map_view = st.text_input("Map view (optional)", value="TICKETS_WITH_COORDS")
+        map_view = st.text_input("Map view", value="TICKETS_WITH_COORDS")
+        survey_view = st.text_input("Survey view", value="V_OM_WORK_TASK_SURVEY")
     else:
         st.subheader("Local CSV files")
         data_dir = st.text_input("Data directory", value="../../data")
         tickets_filename = st.text_input("Tickets CSV", value="V_OM_WORK_TASK.csv")
         assets_filename = st.text_input("Assets CSV", value="V_OM_WORK_TASK_ASSET.csv")
         space_filename = st.text_input("Space CSV", value="V_SPACE_DETAIL.csv")
-        map_filename = st.text_input("Map CSV (optional)", value="TICKETS_WITH_COORDS.csv")
+        map_filename = st.text_input("Map CSV", value="TICKETS_WITH_COORDS.csv")
+        survey_filename = st.text_input("Survey CSV", value="V_OM_WORK_TASK_SURVEY.csv")
 
 try:
-    tickets_df, assets_df, space_df, map_df, resolved_sources = load_sources(
+    tickets_df, assets_df, space_df, map_df, survey_df, resolved_sources = load_sources(
         source_mode,
         data_dir,
         tickets_filename,
         assets_filename,
         space_filename,
         map_filename,
+        survey_filename,
         tickets_view,
         assets_view,
         space_view,
         map_view,
+        survey_view,
     )
 except Exception as exc:
     st.error(f"Could not load source data: {exc}")
     st.stop()
-
-source_counts = {
-    "tickets": 0 if tickets_df is None else len(tickets_df),
-    "assets": 0 if assets_df is None else len(assets_df),
-    "space": 0 if space_df is None else len(space_df),
-    "map": 0 if map_df is None else len(map_df),
-}
-
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Tickets rows", f"{source_counts['tickets']:,}")
-c2.metric("Assets rows", f"{source_counts['assets']:,}")
-c3.metric("Space rows", f"{source_counts['space']:,}")
-c4.metric("Map rows", f"{source_counts['map']:,}")
 
 with st.expander("Current source configuration", expanded=False):
     st.write(f"Source mode: **{source_mode}**")
@@ -459,7 +544,7 @@ with st.expander("Current source configuration", expanded=False):
 
 # Panel 1
 if page == "Panel 1 · Repetitive Tasks":
-    st.header("Panel 1 · Repetitive Tasks")
+    st.header("Repetitive Tasks")
 
     if tickets_df is None or assets_df is None or space_df is None:
         st.info("Load Tickets, Assets, and Space data to use this panel.")
@@ -492,11 +577,6 @@ if page == "Panel 1 · Repetitive Tasks":
         st.error(f"Panel 1 failed: {exc}")
         st.stop()
 
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Total labeled rows", f"{summary['total_rows']:,}")
-    m2.metric("Repetitive rows", f"{summary['repetitive_rows']:,}")
-    m3.metric("Returned rows", f"{summary['returned_rows']:,}")
-
     st.caption(
         f"Computed with num_days={summary['num_days']}, min_days={summary['min_days']}, "
         f"repetitive_only={summary['repetitive_only']}, drop_missing_space={summary['drop_missing_space']}, "
@@ -524,7 +604,7 @@ if page == "Panel 1 · Repetitive Tasks":
 
 # Panel 2
 elif page == "Panel 2 · Map":
-    st.header("Panel 2 · Corrective Ticket Heat Map by Building")
+    st.header("Ticket Heat Map by Building")
 
     if map_df is None:
         st.info(
@@ -665,10 +745,123 @@ elif page == "Panel 2 · Map":
     )
     st.subheader("Grouped building counts")
     render_paginated_dataframe(grouped.rename(columns={"COUNT": "Tickets"}), key_prefix="panel2_grouped", height=350)
+# Panel 3
+elif page == "Panel 3 · Sentiment Analysis":
+    st.header("Sentiment Analysis")
+
+    if tickets_df is None or assets_df is None or space_df is None or survey_df is None:
+        st.info("Load Tickets, Assets, Space, and Survey data to use this panel.")
+        st.stop()
+
+    c1, c2, c3 = st.columns([1.4, 1, 1])
+
+    with c1:
+        selected_text_col = st.selectbox(
+            "Text field",
+            options=list(SENTIMENT_TEXT_COLS.keys()),
+            format_func=lambda col: SENTIMENT_TEXT_COLS[col],
+        )
+
+    with c2:
+        threshold = st.slider(
+            "Sentiment threshold",
+            min_value=0.05,
+            max_value=1.00,
+            value=0.50,
+            step=0.05,
+            help="Higher values show only stronger positive and negative sentiment.",
+        )
+
+    with c3:
+        n_rows = st.number_input(
+            "Rows per section",
+            min_value=1,
+            max_value=100,
+            value=10,
+            step=1,
+        )
+
+    try:
+        panel3_df = build_sentiment_ticket_rows(
+            tickets_df=tickets_df,
+            assets_df=assets_df,
+            space_df=space_df,
+            survey_df=survey_df,
+        )
+    except Exception as exc:
+        st.error(f"Panel 3 failed: {exc}")
+        st.stop()
+
+    sentiment_col = f"{selected_text_col}_SENTIMENT"
+
+    if sentiment_col not in panel3_df.columns:
+        st.error(f"Could not find sentiment column: {sentiment_col}")
+        st.stop()
+
+    scored_df = panel3_df.dropna(subset=[sentiment_col]).copy()
+
+    positive_count = int((scored_df[sentiment_col] >= threshold).sum())
+    negative_count = int((scored_df[sentiment_col] <= -threshold).sum())
+
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Scored tickets", f"{len(scored_df):,}")
+    m2.metric("Strong positive tickets", f"{positive_count:,}")
+    m3.metric("Strong negative tickets", f"{negative_count:,}")
+
+    st.caption(
+        f"Showing sentiment extremes for **{SENTIMENT_TEXT_COLS[selected_text_col]}**. "
+        f"Positive rows have scores ≥ {threshold:.2f}; negative rows have scores ≤ {-threshold:.2f}."
+    )
+
+    positive_df, negative_df = build_sentiment_extremes(
+        df=panel3_df,
+        text_col=selected_text_col,
+        threshold=float(threshold),
+        n_rows=int(n_rows),
+    )
+
+    left, right = st.columns(2)
+
+    with left:
+        st.subheader("Positive Tickets")
+        if positive_df.empty:
+            st.info("No tickets met the positive threshold.")
+        else:
+            render_paginated_dataframe(
+                positive_df,
+                key_prefix="panel3_positive",
+                height=450,
+            )
+
+    with right:
+        st.subheader("Negative Tickets")
+        if negative_df.empty:
+            st.info("No tickets met the negative threshold.")
+        else:
+            render_paginated_dataframe(
+                negative_df,
+                key_prefix="panel3_negative",
+                height=450,
+            )
+
+    download_df = pd.concat(
+        [
+            positive_df.assign(Category="Positive"),
+            negative_df.assign(Category="Negative"),
+        ],
+        ignore_index=True,
+    )
+
+    st.download_button(
+        "Download Panel 3 sentiment rows",
+        data=make_download_bytes(download_df),
+        file_name="panel3_sentiment_extremes.csv",
+        mime="text/csv",
+    )
 
 # Panel 4
 elif page == "Panel 4 · Word Cloud":
-    st.header("Panel 4 · Keyword Search + Word Cloud")
+    st.header("Keyword Search + Word Cloud")
 
     if tickets_df is None or assets_df is None or space_df is None:
         st.info("Load Tickets, Assets, and Space data to use this panel.")

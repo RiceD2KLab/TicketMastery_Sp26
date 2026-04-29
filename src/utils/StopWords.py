@@ -82,7 +82,14 @@ CUSTOM_EXCLUDE = {
 
     # tokenization artifacts
     "doesn", "isn", "won", "don", "didn", "aren", "wasn", "weren",
-    "hasn", "haven", "couldn", "wouldn", "shouldn", "attn", "xxxx"
+    "hasn", "haven", "couldn", "wouldn", "shouldn", "attn", "xxxx",
+
+    # random numerical
+    "2024", "2025", "2021","2022", "2023", "2026", "00pm", "00am", "30am", "999", "348", "9999", 
+    "1st", "2nd", "30pm", "2025", "100", "713", "6000", "3rd", "4th", "lights", "5th",
+    "6th", "7th", "8th", "9th", "10th", "11th", "12th", "13th", "14th", "15th", "16th",
+    "17th", "18th", "19th", "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", 
+    "27th", "28th", "29th", "30th", "31st", "832", "101"
 }
 
 STOP_WORDS = (set(ENGLISH_STOP_WORDS) - KEEP_FROM_SKLEARN) | CUSTOM_EXCLUDE
