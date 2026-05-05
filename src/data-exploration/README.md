@@ -1,6 +1,6 @@
 ## Data Exploration
 
-![Data Science Pipeline](src/assets/Data-Science-Pipeline.svg)
+![Data Science Pipeline](../assets/Data-Science-Pipeline.svg)
 
 
 This directory (`src/data-exploration`) contains jupyter notebooks and html outlining our comprehensive data analysis. **Jupyter notebooks include:**
