@@ -187,6 +187,65 @@ def clean_description(text: str) -> str:
     """
     return " ".join(tokenize_description(text))
 
+def build_map_df_from_tickets_and_space(
+    tickets_df: pd.DataFrame,
+    space_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Build map-ready ticket rows by joining ticket building names to space/building coordinates.
+    """
+    required_ticket_cols = [
+        "WORK_TASK_ID",
+        "WORK_TASK_NAME",
+        "WORK_TASK_STATUS",
+        "RICE_WORK_STATUS",
+        "ASSIGNMENT_STATUS",
+        "TASK_TYPE",
+        "TASK_PRIORITY",
+        "REQUEST_CLASS",
+        "SERVICE_CLASS",
+        "DESCRIPTION",
+        "ASSIGNED_DATE_LTZ",
+        "BUILDING",
+    ]
+
+    available_ticket_cols = [col for col in required_ticket_cols if col in tickets_df.columns]
+
+    building_lookup = (
+        space_df[
+            [
+                "BUILDING",
+                "BUILDING_DESC",
+                "COMMON_NAME",
+                "BUILDING_X_COORDINATE",
+                "BUILDING_Y_COORDINATE",
+                "BUILDING_CLASS",
+            ]
+        ]
+        .dropna(subset=["BUILDING_DESC", "BUILDING_X_COORDINATE", "BUILDING_Y_COORDINATE"])
+        .drop_duplicates(subset=["BUILDING_DESC"])
+        .copy()
+    )
+
+    map_df = tickets_df[available_ticket_cols].merge(
+        building_lookup,
+        left_on="BUILDING",
+        right_on="BUILDING_DESC",
+        how="left",
+        suffixes=("", "_SPACE"),
+    )
+
+    map_df = map_df.rename(
+        columns={
+            "BUILDING_SPACE": "FEP_BUILDING",
+            "BUILDING_DESC": "FEP_BUILDING_DESC",
+            "BUILDING_X_COORDINATE": "FEP_BUILDING_X_COORDINATE",
+            "BUILDING_Y_COORDINATE": "FEP_BUILDING_Y_COORDINATE",
+            "BUILDING_CLASS": "FEP_BUILDING_CLASS",
+        }
+    )
+
+    return map_df
 
 @st.cache_data(show_spinner=False)
 def build_union_freq(descriptions: tuple[str, ...]) -> dict[str, int]:
@@ -539,7 +598,7 @@ def render_paginated_dataframe(df: pd.DataFrame, key_prefix: str, height: int = 
 # Word cloud render
 def render_wordcloud(freq: dict[str, int]):
     """
-    Render a word cloud or fallback frequency chart.
+    Render a word cloud or frequency chart.
     Args:
         freq (dict[str, int]): Token frequency mapping.
 
@@ -642,9 +701,6 @@ def load_sources(
         if space_view:
             space_df = load_snowflake_view(space_view)
             resolved_sources["space"] = space_view
-        if map_view:
-            map_df = load_snowflake_view(map_view)
-            resolved_sources["map"] = map_view
         if survey_view:
             survey_df = load_snowflake_view(survey_view)
             resolved_sources["survey"] = survey_view
@@ -664,19 +720,26 @@ def load_sources(
         if space_path:
             space_df = load_local_csv(str(space_path))
             resolved_sources["space"] = str(space_path)
-        if map_path:
+        if map_path and map_path.exists():
             map_df = load_local_csv(str(map_path))
             resolved_sources["map"] = str(map_path)
+        elif map_path:
+            map_df = None
+            resolved_sources["map"] = f"{map_path} not found"
         if survey_path:
             survey_df = load_local_csv(str(survey_path))
             resolved_sources["survey"] = str(survey_path)
 
 
-    if map_df is None and tickets_df is not None and MAP_REQUIRED_COLUMNS.issubset(set(tickets_df.columns)):
-        map_df = tickets_df.copy()
-        resolved_sources["map"] = "tickets source (fallback)"
+    if map_df is None and tickets_df is not None:
+        if MAP_REQUIRED_COLUMNS.issubset(set(tickets_df.columns)):
+            map_df = tickets_df.copy()
+            resolved_sources["map"] = "tickets source with coordinates"
+        elif space_df is not None:
+            map_df = build_map_df_from_tickets_and_space(tickets_df, space_df)
+            resolved_sources["map"] = "tickets + space detail merge"
 
-    return tickets_df, assets_df, space_df, map_df, survey_df, resolved_sources
+        return tickets_df, assets_df, space_df, map_df, survey_df, resolved_sources
 
 # Sidebar and app shell
 st.title("Ticketmastery Dashboard")
@@ -713,7 +776,6 @@ with st.sidebar:
         tickets_view = st.text_input("Tickets view", value="V_OM_WORK_TASK")
         assets_view = st.text_input("Assets view", value="V_OM_WORK_TASK_ASSET")
         space_view = st.text_input("Space view", value="V_SPACE_DETAIL")
-        map_view = st.text_input("Map view", value="TICKETS_WITH_COORDS")
         survey_view = st.text_input("Survey view", value="V_OM_WORK_TASK_SURVEY")
     else:
         st.subheader("Local CSV files")
@@ -721,7 +783,7 @@ with st.sidebar:
         tickets_filename = st.text_input("Tickets CSV", value="V_OM_WORK_TASK.csv")
         assets_filename = st.text_input("Assets CSV", value="V_OM_WORK_TASK_ASSET.csv")
         space_filename = st.text_input("Space CSV", value="V_SPACE_DETAIL.csv")
-        map_filename = st.text_input("Map CSV", value="TICKETS_WITH_COORDS.csv")
+        map_filename = st.text_input("Map CSV (Optional)", value="TICKETS_WITH_COORDS.csv")
         survey_filename = st.text_input("Survey CSV", value="V_OM_WORK_TASK_SURVEY.csv")
 
 try:
