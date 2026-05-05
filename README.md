@@ -17,51 +17,66 @@ In coordination with our sponsors at FC\&P, numerous directions have been discus
 
 ## Run:
 
-### <u>Dashboard</u>
+### Dashboard
 
-**Note: This dashboard is not finished, and is in a WIP State. Following our "cupcake" design pipeline, the team is creating and testing panels separately before embedding them into the dashboard overlay. The 3D map and "key-word cloud" panels for the dashboard are currently in development state — progress on the 3D map can be viewed in the `map` folder, and the current status of the word cloud is viewable in the current stage of the dashboard.**
+TicketMastery is a Streamlit dashboard built to help Rice FE&P staff explore work task data across repeated maintenance issues, campus locations, ticket sentiment, and common keywords.
 
-To view the interactive dashboard (prototype) constructed for FC&P:
+The current dashboard entry point is:
 
-1. Open `src/dashboard/index.html` in a browser
-2. Download the cleaned & anonymized work task data at `data/TA_data.csv` (not provided for data security).
-3. In the top panel, upload the file named `df_merged_tickets_assets`
-4. Click "reload dashboard" to populate dashboard panels with the work task data.
-
-
-#### Panel 4: Keyword Search + Word Cloud
-
-Panel 4 requires both the frontend and backend to be running locally, along with three raw CSV inputs used to build the word cloud and ticket table from ticket description data.
-
-To use Panel 4 effectively, start the frontend from the `src/dashboard/` directory with:
-
-```bash
-python -m http.server 5500
+```text
+src/Streamlit/StreamlitApp.py
 ```
 
-Then open the dashboard in your browser at `http://localhost:5500/index.html`.
+## Running Locally
 
-Next, start the backend from the `src/` directory with:
+To run the dashboard locally, the required CSV files must exist in the project’s `data/` folder:
 
-```bash
-python -m dashboard.API.API
+```text
+data/
+├── V_OM_WORK_TASK.csv
+├── V_OM_WORK_TASK_ASSET.csv
+├── V_SPACE_DETAIL.csv
+├── TICKETS_WITH_COORDS.csv
+└── V_OM_WORK_TASK_SURVEY.csv
 ```
 
-This command is relative to the current terminal location. In this example, it is run from `src/`, so Python can resolve `dashboard.API.API` correctly and the backend can also access neighboring project modules such as `utils/`.
+These files are not included in the repository for privacy and data security reasons.
 
-**Note: Backend dependencies:** Before starting the Panel 4 backend, make sure the required Python packages are installed in your environment. At minimum, this backend depends on `fastapi`, `uvicorn`, `pandas`, and `python-multipart`.
+Install the required dependencies using the Streamlit requirements file:
 
-After both services are running, upload the three required files in Panel 4:
+```bash
+pip install -r src/Streamlit/requirements_streamlit_dashboard.txt
+```
 
-- **Tickets CSV:** `V_OM_WORK_TASK.csv`
-- **Assets CSV:** `V_OM_WORK_TASK_ASSET`
-- **Space CSV:** `V_SPACE_DETAIL`
+Then run the dashboard:
 
-Then click **Compute Word Cloud (API)**.
+```bash
+streamlit run src/Streamlit/StreamlitApp.py
+```
 
-Panel 4 supports several types of analysis. Users can generate a word cloud over all loaded ticket descriptions, or group the analysis by `SERVICE_CLASS`, `REQUEST_CLASS`, or `RESPONSIBLE_ORGANIZATION_NAME`. After choosing a grouping field, users may optionally enter one or more specific group values. Multiple values should be entered as a comma-separated list.
+The app supports local CSV-based development and Snowflake-based deployment. Locally, it loads from the `data/` folder. In Snowflake, it is intended to connect to Snowflake-hosted views.
 
-The panel also includes a keyword search bar that filters the displayed ticket descriptions and updates the results shown in the table below the cloud. When multiple group values are provided, the word cloud can be viewed in either a combined mode or an **intersection** mode. The combined view reflects the vocabulary across all selected groups, while the intersection view shows only words that appear across every selected group. The ticket table below the cloud displays the underlying tickets contributing to the current view, allowing users to move from high-level word patterns back to specific work orders.
+## Panels
+
+### Panel 1: Repetitive Tasks
+
+Identifies recurring work task patterns that may indicate unresolved or repeated maintenance issues. Users can adjust the time window, minimum day threshold, and filtering options to focus on likely repetitive corrective tickets.
+
+### Panel 2: Map
+
+Displays ticket activity across campus using building coordinate data. Users can filter by date range, keyword, service class, task type, task priority, and building-related fields.
+
+### Panel 3: Sentiment Analysis
+
+Scores ticket-related text fields and highlights the strongest positive and negative examples. Supported fields include request descriptions, resolution notes, and customer response comments.
+
+### Panel 4: Keyword Search + Word Cloud
+
+Shows common words in ticket descriptions and supports keyword filtering, grouping by fields such as `SERVICE_CLASS`, `REQUEST_CLASS`, and `RESPONSIBLE_ORGANIZATION_NAME`, and viewing the matching tickets behind the results.
+
+## Snowflake Deployment
+
+The dashboard is deployed as a Streamlit app in the sponsor’s Snowflake environment. FE&P staff with the appropriate internal access should be able to use the live Snowflake version.
 
 
 ### Modeling & Data Exploration

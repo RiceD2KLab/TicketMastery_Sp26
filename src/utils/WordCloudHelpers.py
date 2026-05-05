@@ -3,15 +3,16 @@ import re
 from collections import Counter
 from utils.StopWords import STOP_WORDS, SHORT_KEEP
 
-"""
-Normalize and tokenize free-text descriptions for downstream word-frequency analysis.
-Args:
-    text (str): Raw text to clean and tokenize.
 
-Returns:
-    list[str]: Ordered list of filtered tokens.
-"""
 def clean_and_tokenize(text):
+    """
+    Normalize and tokenize free-text descriptions for downstream word-frequency analysis.
+    Args:
+        text (str): Raw text to clean and tokenize.
+
+    Returns:
+        list[str]: Ordered list of filtered tokens.
+    """
     text = text.lower()
     text = re.sub(r'[^a-z\s]', ' ', text) 
     tokens = text.split()
@@ -20,23 +21,24 @@ def clean_and_tokenize(text):
                 or word in SHORT_KEEP]
     return tokens
 
-"""
-Compute word frequencies from a tokenized DataFrame, optionally by group.
-Note: No longer in use
 
-Args:
-    df (pd.DataFrame): DataFrame containing a TOKENS column.
-    group_col (str | None, optional): Column name used to group word counts.
-        Defaults to None.
-    group_value (str | None, optional): Specific value within group_col to filter
-        to before aggregation. Defaults to None.
-
-Returns:
-    pd.DataFrame: DataFrame of word counts with columns:
-        - ["WORD", "COUNT"] for overall counts
-        - [group_col, "WORD", "COUNT"] for grouped counts
-"""
 def word_frequency(df, group_col=None, group_value=None):
+    """
+    Compute word frequencies from a tokenized DataFrame, optionally by group.
+    Note: No longer in use
+
+    Args:
+        df (pd.DataFrame): DataFrame containing a TOKENS column.
+        group_col (str | None, optional): Column name used to group word counts.
+            Defaults to None.
+        group_value (str | None, optional): Specific value within group_col to filter
+            to before aggregation. Defaults to None.
+
+    Returns:
+        pd.DataFrame: DataFrame of word counts with columns:
+            - ["WORD", "COUNT"] for overall counts
+            - [group_col, "WORD", "COUNT"] for grouped counts
+    """
     grouped_counts = []
 
     # Default

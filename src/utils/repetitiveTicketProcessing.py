@@ -56,6 +56,15 @@ def _choose_time_column(df: pd.DataFrame) -> str:
 
 
 def _build_object_id(df: pd.DataFrame, group_cols: Sequence[str]) -> pd.Series:
+    """
+    Build a stable object identifier from grouping columns.
+    Args:
+        df (pd.DataFrame): DataFrame containing grouping columns.
+        group_cols (Sequence[str]): Columns that define a repeated object.
+
+    Returns:
+        pd.Series: Pipe-delimited object identifiers.
+    """
     return df[group_cols].fillna("").astype(str).agg(" | ".join, axis=1)
 
 

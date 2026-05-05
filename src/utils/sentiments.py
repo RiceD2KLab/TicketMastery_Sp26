@@ -13,6 +13,14 @@ sia = SentimentIntensityAnalyzer()
 
 
 def _normalize_work_task_id(df):
+    """
+    Normalize WORK_TASK_ID values before joining ticket-related DataFrames.
+    Args:
+        df (pd.DataFrame): Source DataFrame with an optional WORK_TASK_ID column.
+
+    Returns:
+        pd.DataFrame: Copy of df with normalized WORK_TASK_ID values.
+    """
     df = df.copy()
     if "WORK_TASK_ID" in df.columns:
         df["WORK_TASK_ID"] = (
