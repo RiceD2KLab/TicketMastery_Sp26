@@ -1,15 +1,7 @@
 ## Todo: 
 
-
-For ML Repetitive Model:
--  [ ] Add features: (1) Building Condition and (2) Preventative Maintenance
--  [ ] Narrow down the feature space
--  [ ] Create an inference model (regression) to assign weights to the smaller feature space
--  [ ] Look into LDA Analysis
--  [ ] Multicolinearity: Drop columns that have way too high correlation, (argument is they are basically the same feature).
-
-
-For Object ID Histogram: 
-- [ ] QQ plot
+- [ ] Add `description_analysis.ipynb` to root README.md
+- [ ] Add `repetitive_task_inference.ipynb` to root README.md
+- [ ] In root README.md, modify `repetitive_task_prediction.ipynb`'s description to note that this notebook is outdated and not employed in our final analysis.
 
 
