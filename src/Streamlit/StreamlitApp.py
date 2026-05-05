@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
-from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
 SRC_DIR = Path(__file__).resolve().parents[1]
@@ -22,6 +21,10 @@ from utils import repetitiveTicketProcessing as rtp
 from utils import wordCloudProcessing
 from utils import WordCloudHelpers
 from utils import sentiments
+try:
+    from wordcloud import WordCloud
+except ModuleNotFoundError:
+    WordCloud = None
 
 st.set_page_config(page_title="Ticketmastery Dashboard", layout="wide")
 
@@ -383,6 +386,33 @@ def render_paginated_dataframe(df: pd.DataFrame, key_prefix: str, height: int = 
 def render_wordcloud(freq: dict[str, int]):
     if not freq:
         st.info("No words available for word cloud.")
+        return
+
+    if WordCloud is None:
+        st.warning(
+            "The wordcloud package is unavailable in current environment. "
+            "Showing a top-word frequency chart instead."
+        )
+
+        top_words_df = (
+            pd.DataFrame(
+                sorted(freq.items(), key=lambda x: x[1], reverse=True)[:30],
+                columns=["Word", "Count"],
+            )
+        )
+
+        chart = (
+            alt.Chart(top_words_df)
+            .mark_bar()
+            .encode(
+                x=alt.X("Count:Q", title="Count"),
+                y=alt.Y("Word:N", sort="-x", title="Word"),
+                tooltip=["Word", "Count"],
+            )
+            .properties(height=500)
+        )
+
+        st.altair_chart(chart, use_container_width=True)
         return
 
     wc = WordCloud(
