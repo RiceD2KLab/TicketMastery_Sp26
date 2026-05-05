@@ -1,4 +1,4 @@
-# Ticketmastery: Classifying Rice University Maintenance Requests
+# Ticketmastery: Analyzing Service Tickets to Better Serve Rice
 
 ![Showcase Poster](src/assets/Showcase-Poster.svg)
 
