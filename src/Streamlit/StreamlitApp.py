@@ -54,6 +54,14 @@ MAP_REQUIRED_COLUMNS = {
 
 # Data access helpers
 def sanitize_identifier(name: str) -> str:
+    """
+    Validate and normalize a Snowflake object identifier for safe querying.
+    Args:
+        name (str): User-provided Snowflake object name.
+
+    Returns:
+        str: Stripped Snowflake object name.
+    """
     if not name:
         raise ValueError("Missing Snowflake view name.")
     cleaned = name.strip()
@@ -63,15 +71,36 @@ def sanitize_identifier(name: str) -> str:
 
 
 def get_conn():
+    """
+    Create a Streamlit Snowflake connection.
+
+    Returns:
+        Any: Streamlit connection object named "snowflake".
+    """
     return st.connection("snowflake")
 
 
 def get_default_source_mode() -> str:
+    """
+    Choose the default source mode from environment settings.
+
+    Returns:
+        str: "Snowflake views" for production, otherwise "Local data folder".
+    """
     env = os.getenv("TICKETMASTERY_ENV", os.getenv("APP_ENV", "development")).strip().lower()
     return "Snowflake views" if env in {"prod", "production"} else "Local data folder"
 
 
 def resolve_local_path(data_dir: str, filename: str | None) -> Path | None:
+    """
+    Resolve a local CSV filename against the configured data directory.
+    Args:
+        data_dir (str): Base directory for relative filenames.
+        filename (str | None): CSV filename or absolute path.
+
+    Returns:
+        Path | None: Resolved file path, or None when filename is empty.
+    """
     if not filename or not filename.strip():
         return None
 
@@ -88,6 +117,14 @@ def resolve_local_path(data_dir: str, filename: str | None) -> Path | None:
 
 @st.cache_data(show_spinner=False)
 def load_local_csv(csv_path: str) -> pd.DataFrame:
+    """
+    Load a local CSV file into a DataFrame.
+    Args:
+        csv_path (str): Path to the CSV file.
+
+    Returns:
+        pd.DataFrame: Loaded CSV rows.
+    """
     path_obj = Path(csv_path)
     if not path_obj.exists():
         raise FileNotFoundError(f"Could not find CSV at {path_obj}")
@@ -96,6 +133,14 @@ def load_local_csv(csv_path: str) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False, ttl=600)
 def load_snowflake_view(view_name: str) -> pd.DataFrame:
+    """
+    Load all rows from a Snowflake view or table.
+    Args:
+        view_name (str): Snowflake object name to query.
+
+    Returns:
+        pd.DataFrame: Query result rows.
+    """
     conn = get_conn()
     safe_view = sanitize_identifier(view_name)
     return conn.query(f"SELECT * FROM {safe_view}", ttl=600)
@@ -104,10 +149,26 @@ def load_snowflake_view(view_name: str) -> pd.DataFrame:
 # Utility logic 
 
 def parse_group_values_input(text: str) -> list[str]:
+    """
+    Parse comma-separated group values from sidebar text input.
+    Args:
+        text (str): Raw comma-separated values.
+
+    Returns:
+        list[str]: Non-empty stripped group values.
+    """
     return [x.strip() for x in (text or "").split(",") if x.strip()]
 
 
 def tokenize_description(text: str) -> list[str]:
+    """
+    Normalize and tokenize a ticket description for dashboard filtering.
+    Args:
+        text (str): Raw description text.
+
+    Returns:
+        list[str]: Filtered lowercase tokens.
+    """
     return [
         token
         for token in re.split(r"[^a-z0-9]+", str(text).lower())
@@ -116,11 +177,27 @@ def tokenize_description(text: str) -> list[str]:
 
 
 def clean_description(text: str) -> str:
+    """
+    Convert a ticket description into cleaned searchable text.
+    Args:
+        text (str): Raw description text.
+
+    Returns:
+        str: Space-delimited cleaned tokens.
+    """
     return " ".join(tokenize_description(text))
 
 
 @st.cache_data(show_spinner=False)
 def build_union_freq(descriptions: tuple[str, ...]) -> dict[str, int]:
+    """
+    Count word frequencies across all descriptions.
+    Args:
+        descriptions (tuple[str, ...]): Description texts to aggregate.
+
+    Returns:
+        dict[str, int]: Mapping of token to occurrence count.
+    """
     freq: dict[str, int] = {}
     for description in descriptions:
         for token in tokenize_description(description):
@@ -134,6 +211,16 @@ def build_intersection_freq(
     group_values: tuple[str, ...],
     selected_values: tuple[str, ...],
 ) -> dict[str, int]:
+    """
+    Count words shared across selected groups.
+    Args:
+        descriptions (tuple[str, ...]): Description texts aligned to group values.
+        group_values (tuple[str, ...]): Group label for each description.
+        selected_values (tuple[str, ...]): Group labels to compare.
+
+    Returns:
+        dict[str, int]: Frequencies for tokens present in every selected group.
+    """
     normalized_selected = {value.strip().lower() for value in selected_values if value.strip()}
     by_group_freq: dict[str, dict[str, int]] = {}
 
@@ -171,6 +258,21 @@ def build_repetitive_panel_data(
     drop_missing_space: bool,
     corrective_only: bool,
 ) -> tuple[pd.DataFrame, dict]:
+    """
+    Build Panel 1 ticket rows and summary metrics.
+    Args:
+        tickets_df (pd.DataFrame): Ticket source rows.
+        assets_df (pd.DataFrame): Asset source rows.
+        space_df (pd.DataFrame): Space source rows.
+        num_days (int): Maximum days between tasks for repetition.
+        min_days (int): Minimum days between tasks for repetition.
+        repetitive_only (bool): Whether to return only repetitive rows.
+        drop_missing_space (bool): Whether to exclude missing-space rows from detection.
+        corrective_only (bool): Whether to detect only corrective tasks.
+
+    Returns:
+        tuple[pd.DataFrame, dict]: Display rows and computation summary.
+    """
     if rtp is None:
         raise RuntimeError(f"Could not import repetitiveTicketProcessing")
 
@@ -210,6 +312,18 @@ def build_wordcloud_ticket_rows(
     group_col: str,
     group_values_text: str,
 ) -> pd.DataFrame:
+    """
+    Build Panel 4 ticket rows for keyword filtering and word-cloud counts.
+    Args:
+        tickets_df (pd.DataFrame): Ticket source rows.
+        assets_df (pd.DataFrame): Asset source rows.
+        space_df (pd.DataFrame): Space source rows.
+        group_col (str): Optional column used for grouping.
+        group_values_text (str): Comma-separated group values to keep.
+
+    Returns:
+        pd.DataFrame: Ticket rows with building, description, and group value.
+    """
     if wordCloudProcessing is None:
         raise RuntimeError(f"Could not import wordCloudProcessing")
 
@@ -249,6 +363,17 @@ def build_sentiment_ticket_rows(
     space_df: pd.DataFrame,
     survey_df: pd.DataFrame,
 ) -> pd.DataFrame:
+    """
+    Build Panel 3 ticket rows with sentiment scores.
+    Args:
+        tickets_df (pd.DataFrame): Ticket source rows.
+        assets_df (pd.DataFrame): Asset source rows.
+        space_df (pd.DataFrame): Space source rows.
+        survey_df (pd.DataFrame): Survey source rows.
+
+    Returns:
+        pd.DataFrame: Ticket rows with scored sentiment columns.
+    """
     if sentiments is None:
         raise RuntimeError("Could not import sentiments")
 
@@ -288,6 +413,17 @@ def build_sentiment_extremes(
     threshold: float,
     n_rows: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Select the strongest positive and negative sentiment rows.
+    Args:
+        df (pd.DataFrame): Sentiment-scored ticket rows.
+        text_col (str): Text column used for sentiment ranking.
+        threshold (float): Minimum absolute sentiment score to include.
+        n_rows (int): Maximum rows to return for each side.
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame]: Positive rows and negative rows.
+    """
     sentiment_col = f"{text_col}_SENTIMENT"
 
     available_cols = [
@@ -331,10 +467,28 @@ def build_sentiment_extremes(
     return positive_df.rename(columns=rename_map), negative_df.rename(columns=rename_map)
 
 def make_download_bytes(df: pd.DataFrame) -> bytes:
+    """
+    Convert a DataFrame into CSV bytes for Streamlit downloads.
+    Args:
+        df (pd.DataFrame): DataFrame to serialize.
+
+    Returns:
+        bytes: UTF-8 encoded CSV bytes.
+    """
     return df.to_csv(index=False).encode("utf-8")
 
 
 def render_paginated_dataframe(df: pd.DataFrame, key_prefix: str, height: int = 500):
+    """
+    Render a DataFrame with Streamlit pagination controls.
+    Args:
+        df (pd.DataFrame): Rows to display.
+        key_prefix (str): Unique prefix for Streamlit session-state keys.
+        height (int): Table height in pixels.
+
+    Returns:
+        None
+    """
     total_rows = len(df)
 
     if f"{key_prefix}_page_size" not in st.session_state:
@@ -384,6 +538,14 @@ def render_paginated_dataframe(df: pd.DataFrame, key_prefix: str, height: int = 
 
 # Word cloud render
 def render_wordcloud(freq: dict[str, int]):
+    """
+    Render a word cloud or fallback frequency chart.
+    Args:
+        freq (dict[str, int]): Token frequency mapping.
+
+    Returns:
+        None
+    """
     if not freq:
         st.info("No words available for word cloud.")
         return
@@ -448,6 +610,25 @@ def load_sources(
     pd.DataFrame | None,
     dict[str, str],
 ]:
+    """
+    Load dashboard source data from local CSV files or Snowflake views.
+    Args:
+        source_mode (str): Selected source mode.
+        data_dir (str | None): Base folder for local CSV files.
+        tickets_filename (str | None): Local tickets CSV filename.
+        assets_filename (str | None): Local assets CSV filename.
+        space_filename (str | None): Local space CSV filename.
+        map_filename (str | None): Local map CSV filename.
+        survey_filename (str | None): Local survey CSV filename.
+        tickets_view (str | None): Snowflake tickets object name.
+        assets_view (str | None): Snowflake assets object name.
+        space_view (str | None): Snowflake space object name.
+        map_view (str | None): Snowflake map object name.
+        survey_view (str | None): Snowflake survey object name.
+
+    Returns:
+        tuple: Tickets, assets, space, map, survey, and resolved source labels.
+    """
     tickets_df = assets_df = space_df = map_df = survey_df = None
     resolved_sources: dict[str, str] = {}
 
