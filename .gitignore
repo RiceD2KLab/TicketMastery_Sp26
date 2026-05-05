@@ -1,12 +1,6 @@
 data/*
-data/TAS_data.csv
-data/V_OM_WORK_TASK_ASSET.csv
-data/V_OM_WORK_TASK_SURVEY.csv
-data/V_OM_WORK_TASK.csv
-data/V_SPACE_BUILDING_DETAIL.csv
 !data/.gitkeep
 src/todo.md
-todo.txt
 *.csv
 
 objects_old.ipynb
@@ -14,6 +8,7 @@ repetitive_task_detector.py
 repetitive_task_explorer.jsx
 USAGE_GUIDE.md
 data/
-data-exploration/
 .DS_Store
 **/.DS_Store
+
+**/todo.md

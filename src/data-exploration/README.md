@@ -1,0 +1,20 @@
+## Data Exploration
+
+![Data Science Pipeline](src/assets/Data-Science-Pipeline.svg)
+
+
+This directory (`src/data-exploration`) contains jupyter notebooks and html outlining our comprehensive data analysis. **Jupyter notebooks include:**
+
+- **`preliminary_data_exploration.ipynb`:** A deep dive into the work order datasets provided by FC&P is provided in `preliminary\_data\_exploration.ipynb`. Work task data, asset data, and survey data are matched, features are analyzed, and plans for modeling are developed.
+
+- **`repetitive_assets.ipynb`:** Our initial detection methodology for detecting 'repetitive tasks' (chronic issues on campus that are not fixed despite persistent work orders) is implemented and conclusions are drawn. We find that using the ASSET_ID feature is not suitable for matching corrective tickets with similar requests, and the necessity for a new strategy is discussed.
+
+- **`repetitive_objects.ipynb`:** Our revised and improved detection methodology for detecting 'repetitive tasks.' Rather than using ASSET_IDs, corrective tickets are grouped by the broken "object" they are likely to reference using the SPACE, FLOOR, BUILDING, and SERVICE_REQUEST_CLASS features. Entries of the original dataset without space information (tickets that do not reference a specific space within a building) are dropped for the sake of this analysis, but we are still left with over 120,000 observations to work with — enough to perform robust analysis. We find that this so-called "Object ID" detection strategy provides much more believable results than the implementation using Asset IDs in `repetitive_assets.ipynb` since the distribution of implied object failure rates more closely follows a Power Law.
+
+- **`ticket_heat_map.ipynb`:** This map code merges the two datasets into one and maps tickets to their respective location on the Rice campus. The map also accounts for the number of tickets at each location, with a corresponding height and color for each location. The higher and warmer the color, the larger the number of tickets. To run this code, one must install pandas for data handling and manipulation and pydeck for map plotting. In the full interactive map, one must also install Streamlit. Additionally, one can see the breakdown of tickets by building class to see which classes need more attention compared to others (note that this is overall tickets and is not normalized with respect to the number of buildings per class).
+
+- **`description_analysis.ipynb`:** Analyzes description data and builds the sentiment score features utilized in our logistic regression model (see `src/modeling/repetitive_task_inference`). Particularly, we explore the three text fields in the work task data — `DESCRIPTION` (written by the requester at submission), `RESOLUTION_DESCRIPTION` (written by the technician at completion), and `RESPONSE_COMMENTS` (collected from post-completion surveys). Tickets, assets, and surveys are joined on `WORK_TASK_ID` (with assets and surveys deduplicated to one row per ticket), then narrowed to a working set of 24 columns. We approach the text from two angles. First, we score each field with VADER (a lexicon-based sentiment model well suited to short, informal text), assigning each ticket a compound score from -1.0 to +1.0. Second, we tokenize the `DESCRIPTION` field (lowercasing, stripping punctuation and digits, removing stopwords) and compute keyword frequencies grouped by `REQUEST_CLASS` and `SERVICE_CLASS`, then convert raw counts into a per-class appearance rate (the share of distinct tickets in each class containing a keyword at least once) so the signal is comparable across classes of very different sizes. Outputs include both the per-ticket sentiment columns — fed into `repetitive_task_inference.ipynb` as features — and CSVs of overall, per-class, and per-organization keyword frequencies that power the dashboard's Keyword Search and Word Cloud panel.
+
+**Other files include:**
+- `my_pydeck_map.html`: Viewable, interactive html map showing number of tickets per building on Rice Campus from mid-2021 to early 2026.
+

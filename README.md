@@ -1,5 +1,6 @@
 # Ticketmastery: Classifying Rice University Maintenance Requests
 
+![Showcase Poster](src/assets/Showcase-Poster.svg)
 
 ## About
 
@@ -102,6 +103,8 @@ Data exploration, statistical analyses, and machine learning modeling is outline
 - **`repetitive_task_prediction.ipynb`:** *This notebook was part of a previous iteration of the project, and is now deprecated in lieu of `repetitive_task_inference.ipynb` due to low accuracy and subpar model interpretability. This notebook is kept for reference, but was not employed in our final analysis.* Random forests and XGBoost models are experimented with, in order to predict whether a given ticket is likely to reference a chronic building issue ('repetitive ticket'). SMOTE and Threshold tuning are implemented due to the inbalanced classes (18.6:1 ratio of repetitive to non-repetitive tickets), which increase the accuracy of the XGBoost model significantly. The models accurately predict non-repetitive tickets; however, due to the unbalanced data and lack of important information in the features used for training the models are only able to reach a maximum of 46% accuracy in correctly classifying a repetitive ticket as repetitive.
 
 - **`request_class_cluster.ipynb`:** Evaluates two clustering methodologies aimed at reducing the operational complexity of a request system containing 400 overly granular classes. By leveraging semantic similarity within the REQUEST_CLASS and DESCRIPTION fields, the goal was to streamline reporting by consolidating these entries into 100 cohesive groups. While both K-Means and Agglomerative approaches were tested, the Agglomerative model proved superior for this use case. Unlike the K-Means model, which failed to identify an optimal cluster count via the elbow method, the Agglomerative approach provided a deterministic framework that captured the natural hierarchy of maintenance tasks. Ultimately, the use of a dendrogram enabled a more intuitive, data-driven selection of the final 100 clusters, significantly improving operational efficiency compared to the rigid, predefined constraints of the K-Means method.
+
+
 
 
 *This project was completed for the Rice University Data Science Capstone Project (Spring 2026)*
