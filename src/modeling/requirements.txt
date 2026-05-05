@@ -1,4 +1,6 @@
-Package requirements for request_class_cluster.ipynb:
+# Organized by notebook; shared packages appear in multiple sections.
+
+# Package requirements for request_class_cluster.ipynb:
 matplotlib==3.10.9
 numpy==2.4.4
 pandas==3.0.2
@@ -6,7 +8,7 @@ scikit_learn==1.8.0
 scipy==1.17.1
 sentence_transformers==5.3.0
 
-Package requirements for repetitive_task_inference.ipynb:
+# Package requirements for repetitive_task_inference.ipynb:
 matplotlib==3.10.9
 numpy==2.4.4
 pandas==3.0.2
@@ -14,7 +16,7 @@ scikit_learn==1.8.0
 seaborn==0.14.2
 statsmodels==0.17.0
 
-Package requirements for repetitive_task_prediction.ipynb:
+# Package requirements for repetitive_task_prediction.ipynb:
 imbalanced_learn==0.13.0
 matplotlib==3.10.9
 numpy==2.4.4
