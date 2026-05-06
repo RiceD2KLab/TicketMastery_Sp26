@@ -5,5 +5,7 @@ pydeck
 altair
 matplotlib
 wordcloud
+vaderSentiment
 snowflake-connector-python>=2.8.0
 snowflake-snowpark-python>=0.9.0
+

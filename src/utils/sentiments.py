@@ -7,8 +7,7 @@ from collections import Counter
 from nltk.sentiment import SentimentIntensityAnalyzer
 from utils.StopWords import STOP_WORDS, SHORT_KEEP
 
-nltk.download("vader_lexicon")
-
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 sia = SentimentIntensityAnalyzer()
 
 
