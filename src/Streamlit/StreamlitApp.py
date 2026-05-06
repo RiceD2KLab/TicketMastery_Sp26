@@ -773,10 +773,10 @@ with st.sidebar:
     if source_mode == "Snowflake views":
         st.subheader("Snowflake objects")
         st.caption("Production mode: Snowflake views")
-        tickets_view = st.text_input("Tickets view", value="V_OM_WORK_TASK")
-        assets_view = st.text_input("Assets view", value="V_OM_WORK_TASK_ASSET")
-        space_view = st.text_input("Space view", value="V_SPACE_DETAIL")
-        survey_view = st.text_input("Survey view", value="V_OM_WORK_TASK_SURVEY")
+        tickets_view = st.text_input("Tickets view", value="PROD_FCP_DW.DW.V_OM_WORK_TASK")
+        assets_view = st.text_input("Assets view", value="PROD_FCP_DW.DW.V_OM_WORK_TASK_ASSET")
+        space_view = st.text_input("Space view", value="PROD_FCP_DW.DW.V_SPACE_DETAIL")
+        survey_view = st.text_input("Survey view", value="PROD_FCP_DW.DW.V_OM_WORK_TASK_SURVEY")
     else:
         st.subheader("Local CSV files")
         data_dir = st.text_input("Data directory", value="../../data")
