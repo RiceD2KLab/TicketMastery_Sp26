@@ -2,9 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
-import nltk
 from collections import Counter
-from nltk.sentiment import SentimentIntensityAnalyzer
 from utils.StopWords import STOP_WORDS, SHORT_KEEP
 
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
