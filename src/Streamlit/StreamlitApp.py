@@ -131,7 +131,7 @@ def load_local_csv(csv_path: str) -> pd.DataFrame:
     return pd.read_csv(path_obj)
 
 
-@st.cache_data(show_spinner=False, ttl=600)
+@st.cache_data(show_spinner=False, ttl=1800)
 def load_snowflake_view(view_name: str) -> pd.DataFrame:
     """
     Load all rows from a Snowflake view or table.
@@ -143,7 +143,7 @@ def load_snowflake_view(view_name: str) -> pd.DataFrame:
     """
     conn = get_conn()
     safe_view = sanitize_identifier(view_name)
-    return conn.query(f"SELECT * FROM {safe_view}", ttl=600)
+    return conn.query(f"SELECT * FROM {safe_view}", ttl=1800)
 
 
 # Utility logic 
